@@ -29,21 +29,133 @@
 
 All code runs on the **NVIDIA Jetson Nano** via **WiFi + Jupyter Notebook**.
 
+### 1. Connect to the Jetson
 ```bash
-# On your laptop: SSH into Jetson
+# On your laptop: SSH into the Jetson Nano
 ssh jetson@<jetson-ip>
-
-# Start Jupyter on the Jetson
-jupyter notebook --ip=0.0.0.0 --port=8888
-
-# Open browser on laptop
-# http://<jetson-ip>:8888
-
-# In Jupyter: clone and run
-git clone <repo-url>
-cd itq-bottle-cap-collector
-# Open notebooks/01_calibrate.ipynb and follow steps
+# Default password is usually 'jetson' unless changed
 ```
+
+### 2. Start Jupyter Notebook Server
+```bash
+# On the Jetson (via SSH)
+cd ~
+jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
+
+# You will see a URL with a token:
+# http://<jetson-ip>:8888/?token=abc123...
+```
+
+### 3. Open Jupyter in Your Laptop Browser
+```
+# Copy the full URL from the terminal and paste into your laptop browser
+http://<jetson-ip>:8888/?token=abc123...
+```
+
+### 4. Clone the Project (First Time Only)
+In a Jupyter terminal (New → Terminal):
+```bash
+cd ~
+git clone <repo-url> itq-bottle-cap-collector
+cd itq-bottle-cap-collector
+```
+
+### 5. Run the Calibration Notebook
+```
+In Jupyter:
+1. Navigate to itq-bottle-cap-collector/notebooks/
+2. Open 01_calibrate.ipynb
+3. Run cells top-to-bottom (Shift+Enter)
+```
+
+---
+
+## 🔄 Daily Jupyter Workflow
+
+This is how the team works during the hackathon:
+
+### Step 1: Power On & Connect
+```bash
+# 1. Turn on JETANK (battery switch)
+# 2. Wait 60 seconds for Jetson to boot
+# 3. SSH from laptop
+ssh jetson@192.168.1.100   # replace with actual IP
+
+# 4. Start Jupyter
+jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
+```
+
+### Step 2: Open Browser & Navigate
+- Open `http://<jetson-ip>:8888` on laptop
+- Navigate to the project folder
+
+### Step 3: Work in Notebooks
+Each module has its own notebook:
+
+| Notebook | Purpose | Who |
+|----------|---------|-----|
+| `01_calibrate.ipynb` | Camera color/light calibration | Yashveer |
+| `02_test_camera.ipynb` | Verify CSI camera capture | Yashveer |
+| `03_test_servos.ipynb` | Test arm + chassis servos | Mohammad |
+| `04_test_sensors.ipynb` | Read ultrasonic / IR distances | Myron |
+| `05_detection_demo.ipynb` | Live cap detection overlay | Yashveer |
+| `06_full_run.ipynb` | End-to-end autonomous run | Team |
+
+### Step 4: Test & Iterate
+```python
+# Typical cell pattern in every notebook
+import cv2
+from hardware.camera import JetsonCamera
+from perception.detector import CapDetector
+
+cam = JetsonCamera()
+detector = CapDetector()
+
+frame = cam.read()
+detections = detector.find_caps(frame)
+
+# Show result
+cv2.imshow('debug', detector.draw_overlay(frame, detections))
+```
+
+### Step 5: Save & Commit
+```bash
+# In Jupyter Terminal (New → Terminal)
+cd ~/itq-bottle-cap-collector
+git add notebooks/03_test_servos.ipynb
+git commit -m "test: servo angles for arm pickup motion"
+git push
+```
+
+---
+
+## 🐍 From Notebook to `.py` Module
+
+When a notebook cell works, convert it to a module:
+
+```bash
+# Convert notebook to Python script
+jupyter nbconvert --to script notebooks/05_detection_demo.ipynb
+# Creates: notebooks/05_detection_demo.py
+
+# Then move the function into the real module
+mv notebooks/05_detection_demo.py perception/detector.py
+```
+
+Or manually: copy the working cell into the `.py` file in the right package folder.
+
+---
+
+## ⚡ Jupyter Tips for Jetson Nano
+
+| Tip | Why |
+|-----|-----|
+| **Restart kernel often** | Jetson has limited RAM (4GB). Restart clears leaked memory from OpenCV frames. |
+| **Close figure windows** | `cv2.destroyAllWindows()` before running the next cell. |
+| **Use `%matplotlib inline`** | Prevents extra GUI windows that crash headless Jetson. |
+| **Limit camera resolution** | `cam.set_resolution(320, 240)` — smaller frames = faster detection + less RAM. |
+| **One notebook at a time** | Running multiple notebooks eats RAM. Close finished tabs. |
+| **Save before every run** | Jetson can freeze under load. `Ctrl+S` is your friend. |
 
 ---
 
