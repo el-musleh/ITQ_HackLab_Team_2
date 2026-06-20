@@ -5,7 +5,7 @@ Tests: State transitions, turn direction logic, timing calculations.
 These are pure-Python tests — no hardware required.
 """
 import time
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 # Replicate the key logic from navigation.ipynb for testing

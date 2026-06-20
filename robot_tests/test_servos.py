@@ -5,7 +5,7 @@ Tests: TTLServo import, arm joints movement, camera pan/tilt.
 WARNING: Arm will move during tests. Keep clear of fragile objects.
 """
 import time
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 def test_servo_library():

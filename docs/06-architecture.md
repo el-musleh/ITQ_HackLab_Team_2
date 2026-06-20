@@ -33,7 +33,7 @@ itq-bottle-cap-collector/
 │   ├── telemetry.py            # Logging: caps seen, collected, collisions, time
 │   └── visualizer.py           # Debug overlay for camera feed
 │
-└── tests/                       # ✅ Validation scripts
+└── robot_tests/                       # ✅ Validation scripts
     ├── test_camera.py
     ├── test_detection.py
     └── test_pid.py

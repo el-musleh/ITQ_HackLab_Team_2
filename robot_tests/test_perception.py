@@ -7,7 +7,7 @@ Requires a working camera — run test_camera first.
 import cv2
 import numpy as np
 import time
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 TAPE_HSV_LOWER = np.array([15,  60,  60])

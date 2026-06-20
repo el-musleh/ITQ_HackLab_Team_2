@@ -2,25 +2,25 @@
 Test Suite Runner — command line entry point.
 
 Usage:
-    python -m tests.runner          # run all tests
-    python -m tests.test_camera       # run only camera tests
-    python -m tests.test_motors       # run only motor tests
-    python -m tests.test_servos       # run only servo tests
-    python -m tests.test_perception   # run only perception tests
-    python -m tests.test_state_machine # run only logic tests
-    python -m tests.test_integration  # run only integration tests
+    python -m robot_tests.runner          # run all tests
+    python -m robot_tests.test_camera       # run only camera tests
+    python -m robot_tests.test_motors       # run only motor tests
+    python -m robot_tests.test_servos       # run only servo tests
+    python -m robot_tests.test_perception   # run only perception tests
+    python -m robot_tests.test_state_machine # run only logic tests
+    python -m robot_tests.test_integration  # run only integration tests
 
-Or open tests/test_runner.ipynb in JupyterLab for interactive testing.
+Or open robot_tests/test_runner.ipynb in JupyterLab for interactive testing.
 """
 import sys
 
-from tests import test_results
-from tests.test_camera import run_all as run_camera
-from tests.test_motors import run_all as run_motors
-from tests.test_servos import run_all as run_servos
-from tests.test_perception import run_all as run_perception
-from tests.test_state_machine import run_all as run_state_machine
-from tests.test_integration import run_all as run_integration
+from robot_tests import test_results
+from robot_tests.test_camera import run_all as run_camera
+from robot_tests.test_motors import run_all as run_motors
+from robot_tests.test_servos import run_all as run_servos
+from robot_tests.test_perception import run_all as run_perception
+from robot_tests.test_state_machine import run_all as run_state_machine
+from robot_tests.test_integration import run_all as run_integration
 
 
 def run_all():

@@ -6,7 +6,7 @@ safe_stop with missing robot, camera+perception pipeline.
 """
 import numpy as np
 import time
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 def test_safe_stop_with_none():

@@ -188,7 +188,7 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 │   ├── telemetry.py            # Logging: caps seen, collected, collisions, time
 │   └── visualizer.py           # Debug overlay for camera feed
 │
-└── tests/                       # ✅ Validation scripts
+└── robot_tests/                       # ✅ Validation scripts
     ├── test_camera.py
     ├── test_detection.py
     └── test_pid.py
@@ -291,7 +291,7 @@ pip install ultralytics
 |------|------|--------|--------|
 | **Yashveer Sookun** | Vision Lead | `perception/` | 🔴 Not started |
 | **Salawu Wareeth** | Pipeline / Logging | `utils/telemetry.py` | 🔴 Not started |
-| **Mohammed Abubakr Khan** | Integration / QA | `tests/` | 🔴 Not started |
+| **Mohammed Abubakr Khan** | Integration / QA | `robot_tests/` | 🔴 Not started |
 | **Joaquín Morillo Soto** | Hardware / Mechanics | `hardware/` | 🔴 Not started |
 | **Mohammad El Musleh** | Control Lead | `control/` + Jetson setup | 🔴 Not started |
 | **Myron Sydorov** | Navigation / Recovery | `control/recovery.py` | 🔴 Not started |
