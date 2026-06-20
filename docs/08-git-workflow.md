@@ -5,8 +5,9 @@
 | Branch | Purpose |
 |--------|---------|
 | `main` | Stable, team-shared code |
-| `elmusleh` | Mohammad's working branch (laptop) |
-| `jetson-config` | Jetson-specific setup and config |
+| `develop` | Active integration branch |
+| `kais-navigation` | Navigation module (feature) |
+| `feature/<name>` | Each teammate's module branch |
 
 ## Laptop Workflow (All Team Members)
 
@@ -53,7 +54,7 @@ GitHub dropped password auth. Use a **Personal Access Token**.
 ### Push from Jetson
 
 ```bash
-git push origin jetson-config
+git push origin $(git branch --show-current)
 ```
 
 When prompted for password, **paste the token** (not your GitHub password).
@@ -62,7 +63,7 @@ When prompted for password, **paste the token** (not your GitHub password).
 
 ```bash
 git config credential.helper store
-git push origin jetson-config
+git push origin $(git branch --show-current)
 # Paste token once — saved for future pushes
 ```
 
@@ -75,7 +76,7 @@ rm ~/.git-credentials
 
 1. Go to: `https://github.com/el-musleh/ITQ_HackLab_Team_2`
 2. Click **Pull requests** → **New pull request**
-3. `base: main` ← `compare: jetson-config`
+3. `base: main` ← `compare: feature/<your-branch>`
 4. **Create pull request** → **Merge pull request**
 
 Team members then pull:
