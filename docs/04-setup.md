@@ -60,8 +60,7 @@ git config user.email "your-github-email@example.com"
 ## Project Structure After Setup
 
 ```
-/workspace/
-├── JETANK/                    # Official examples (REFERENCE — do not modify)
+/workspace/itq-bottle-cap-collector/jetank/                    # Official examples (REFERENCE — do not modify)
 │   ├── JETANK_1_servos/
 │   ├── JETANK_2_ctrl/
 │   ├── JETANK_5_colorTracking/

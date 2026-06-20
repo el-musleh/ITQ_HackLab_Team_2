@@ -30,14 +30,14 @@
 | Library | Purpose | Source |
 |---------|---------|--------|
 | `jetbot` | Camera interface | Pre-installed on Jetson |
-| `SCSCtrl` | Servo motor control | `/workspace/JETANK/SCSCtrl/` |
+| `SCSCtrl` | Servo motor control | `/workspace/itq-bottle-cap-collector/jetank/SCSCtrl/` |
 | `cv2` (OpenCV) | Computer vision | `pip install opencv-python` |
 | `TTLServo` | High-level servo API | From `SCSCtrl` package |
 
 ## Official Examples Location (on Jetson)
 
 ```
-/workspace/JETANK/
+/workspace/itq-bottle-cap-collector/jetank/
 ├── JETANK_1_servos/              # Individual servo control
 ├── JETANK_2_ctrl/                # Chassis motor control
 ├── JETANK_3_motionDetect/        # Motion detection
