@@ -1,5 +1,11 @@
 # ITQ Bottle Cap Collector — Configuration
 
+# Arena dimensions
+arena:
+  width_cm: 175
+  height_cm: 180
+  boundary_color: yellow
+
 # Camera settings
 camera:
   width: 320
@@ -7,29 +13,64 @@ camera:
   fps: 30
   source: 0  # CSI camera on Jetson
 
-# Color detection (HSV)
-# Adjust these on-site during calibration!
-color:
-  lower_hsv: [24, 100, 100]   # H, S, V min
-  upper_hsv: [44, 255, 255]  # H, S, V max
-  # Example presets:
-  # yellow: [24, 100, 100] to [44, 255, 255]
-  # red:    [160, 100, 100] to [180, 255, 255]
-  # green:  [50, 200, 100] to [70, 255, 255]
-  # blue:   [110, 180, 200] to [135, 225, 255]
+# Ball detection (multi-color)
+balls:
+  colors:
+    blue:
+      hsv_lower: [100, 150, 50]
+      hsv_upper: [130, 255, 255]
+    red_1:
+      hsv_lower: [0, 150, 50]
+      hsv_upper: [10, 255, 255]
+    red_2:
+      hsv_lower: [170, 150, 50]
+      hsv_upper: [180, 255, 255]
+    silver:
+      hsv_lower: [0, 0, 150]
+      hsv_upper: [180, 30, 255]
+  min_area_px: 100
+  validation_frames: 3
+
+# Basket (calibrated at runtime)
+basket:
+  hsv_lower: [0, 0, 50]
+  hsv_upper: [180, 50, 200]
+  size_px: null  # Set by calibration
+  location_x: null
+  location_y: null
+
+# Obstacles (yellow tape detection)
+obstacles:
+  yellow_hsv_lower: [20, 100, 100]
+  yellow_hsv_upper: [40, 255, 255]
+  threshold_px: 1800
+  edge_threshold: 500
 
 # State machine tuning
 state_machine:
-  approach_distance_px: 50    # Stop when cap fills this many pixels
-  search_rotate_speed: 30      # Degrees per second while searching
-  approach_speed: 40           # Motor speed during approach
-  recovery_timeout_sec: 5      # Back up if stuck for N seconds
+  approach_distance_px: 50
+  search_rotate_speed: 30
+  approach_speed: 40
+  recovery_timeout_sec: 5
 
 # PID controller
 pid:
   kp: 3.0   # Proportional gain
   ki: 0.0   # Integral gain
   kd: 0.5   # Derivative gain
+
+# Motor limits
+motors:
+  max_speed: 0.25
+  approach_speed: 0.15
+  search_speed: 0.10
+
+# Arm poses (angles in degrees)
+arm_poses:
+  home: [0, 0, 0, 0]        # All servos at center
+  pickup: [0, -40, -60, 0]  # Lower to ground
+  carry: [0, 20, 30, 90]    # Lift with gripper closed
+  deposit: [0, 40, 40, 0]   # Over basket, gripper open
 
 # Servo IDs (JETANK hardware)
 servos:
