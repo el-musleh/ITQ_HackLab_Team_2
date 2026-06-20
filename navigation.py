@@ -161,7 +161,7 @@ LOCK_MAX_LOST  = 2      # inference cycles before releasing lock and re-scanning
 
 # -- Frame loop ------------------------------------------------------------
 def execute():
-    global nav_state
+    global nav_state, _cap_det, _locked_x, _lock_lost
 
     with _cap_lock:
         cap = _cap_det
@@ -174,7 +174,6 @@ def execute():
             # Pick the cap, release lock, then scan for the next one
             safe_stop()
             _pick_cap()
-            global _locked_x, _lock_lost
             _locked_x  = None
             _lock_lost = 0
             with _cap_lock:
