@@ -129,7 +129,7 @@ class OpenCvGstCamera(CameraBase):
         if hasattr(self, 'cap'):
             self.cap.release()
         if hasattr(self, 'thread'):
-            self.thread.join()
+            self.thread.join(timeout=1.0)
             
     def restart(self):
         self.stop()
