@@ -1,0 +1,113 @@
+# ========================================
+# Python
+# ========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ========================================
+# Virtual Environment
+# ========================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ========================================
+# Jupyter Notebook
+# ========================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# ========================================
+# IDE / Editor
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ========================================
+# Jetson / Hardware
+# ========================================
+# Serial port lock files
+*.lock
+# Camera calibration temp files
+*.calib
+# Jetson stats cache
+.jtop
+
+# ========================================
+# Project Specific
+# ========================================
+logs/*.log
+logs/*.txt
+
+# SCSCtrl / local package build artifacts
+SCSCtrl.egg-info/
+*.egg-info/
+
+# Recursive Python cache (covers subdirectories too)
+**/__pycache__/
+**/*.py[cod]
+
+# Jetson GPU cache
+.nv/
+
+# Test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Local package wheels
+*.whl
+# Recorded demo videos (large files)
+*.mp4
+*.avi
+*.mkv
+# Dataset images (large)
+ datasets/
+images/*.jpg
+images/*.png
+# Model weights (large)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+
+# ========================================
+# OS
+# ========================================
+Thumbs.db
+.DS_Store
+*.bak
+
+# ========================================
+# Hackathon / Temporary
+# ========================================
+tmp/
+temp/
+.cache/

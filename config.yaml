@@ -1,0 +1,46 @@
+# ITQ Bottle Cap Collector — Configuration
+
+# Camera settings
+camera:
+  width: 320
+  height: 240
+  fps: 30
+  source: 0  # CSI camera on Jetson
+
+# Color detection (HSV)
+# Adjust these on-site during calibration!
+color:
+  lower_hsv: [24, 100, 100]   # H, S, V min
+  upper_hsv: [44, 255, 255]  # H, S, V max
+  # Example presets:
+  # yellow: [24, 100, 100] to [44, 255, 255]
+  # red:    [160, 100, 100] to [180, 255, 255]
+  # green:  [50, 200, 100] to [70, 255, 255]
+  # blue:   [110, 180, 200] to [135, 225, 255]
+
+# State machine tuning
+state_machine:
+  approach_distance_px: 50    # Stop when cap fills this many pixels
+  search_rotate_speed: 30      # Degrees per second while searching
+  approach_speed: 40           # Motor speed during approach
+  recovery_timeout_sec: 5      # Back up if stuck for N seconds
+
+# PID controller
+pid:
+  kp: 3.0   # Proportional gain
+  ki: 0.0   # Integral gain
+  kd: 0.5   # Derivative gain
+
+# Servo IDs (JETANK hardware)
+servos:
+  pan: 1     # Camera pan servo
+  tilt: 5    # Camera tilt servo
+  arm_base: 2
+  arm_shoulder: 3
+  arm_elbow: 4
+  gripper: 6
+
+# Serial port
+serial:
+  port: /dev/ttyTHS1
+  baudrate: 1000000
