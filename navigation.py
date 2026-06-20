@@ -34,7 +34,7 @@ CAMERA_TILT_DOWN = 22
 
 MAX_SPEED        = 0.25
 SCAN_TURN_SPEED  = 0.12   # rotation speed while scanning
-APPROACH_SPEED   = 0.08   # forward speed while approaching
+APPROACH_SPEED   = 0.18   # forward speed while approaching
 CENTER_TOLERANCE = 30     # px offset from frame centre to consider "centred"
 CAP_CLOSE_SIZE   = 80     # bounding box px (width or height) -> stop
 
