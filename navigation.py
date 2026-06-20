@@ -150,11 +150,13 @@ def execute():
                 if abs(offset) < CENTER_TOLERANCE:
                     nav_state = 'APPROACH_CAP'
                 elif offset > 0:
-                    left_spd  =  SCAN_TURN_SPEED
-                    right_spd = -SCAN_TURN_SPEED
-                else:
+                    # cap right of centre -> turn right
                     left_spd  = -SCAN_TURN_SPEED
                     right_spd =  SCAN_TURN_SPEED
+                else:
+                    # cap left of centre -> turn left
+                    left_spd  =  SCAN_TURN_SPEED
+                    right_spd = -SCAN_TURN_SPEED
 
         elif nav_state == 'APPROACH_CAP':
             if cap is None:
@@ -169,8 +171,8 @@ def execute():
                     nav_state = 'CENTER_CAP'
                 else:
                     correction = (offset / (CAMERA_WIDTH / 2.0)) * APPROACH_SPEED * 0.4
-                    left_spd  = APPROACH_SPEED + correction
-                    right_spd = APPROACH_SPEED - correction
+                    left_spd  = APPROACH_SPEED - correction
+                    right_spd = APPROACH_SPEED + correction
 
         set_drive(left_spd, right_spd)
 
@@ -190,7 +192,7 @@ def _inference_loop():
             frame  = camera.value.copy()
             result = _infer_frame(frame)
             caps   = _extract_caps(result)
-            best   = max(caps, key=lambda p: p['confidence']) if caps else None
+            best   = max(caps, key=lambda p: max(p.get('width', 0), p.get('height', 0))) if caps else None
             with _cap_lock:
                 _cap_det = best
 
