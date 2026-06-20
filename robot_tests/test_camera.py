@@ -7,7 +7,7 @@ Run standalone or via test_runner.
 import cv2
 import time
 
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 def test_camera_init(width=320, height=240):

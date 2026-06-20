@@ -134,7 +134,7 @@ mkdir -p \
     control \
     hardware \
     utils \
-    tests \
+    robot_tests \
     notebooks \
     logs
 
@@ -284,7 +284,7 @@ else
     echo -e "${GREEN}Next steps on dev machine:${NC}"
     echo "  1. Activate venv:  source venv/bin/activate"
     echo "  2. Edit code in:     perception/, control/, hardware/"
-    echo "  3. Test modules:     python3 -m pytest tests/"
+    echo "  3. Test modules:     python3 -m pytest robot_tests/"
     echo "  4. When ready, push: git push origin elmusleh"
     echo ""
     echo "  (This is a dev environment — robot hardware only works on the Jetson Nano)"

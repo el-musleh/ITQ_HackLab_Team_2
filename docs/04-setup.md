@@ -76,7 +76,7 @@ git config user.email "your-github-email@example.com"
     ├── control/
     ├── hardware/
     ├── utils/
-    ├── tests/
+    ├── robot_tests/
     └── notebooks/
 ```
 

@@ -1,0 +1,33 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    },
+    "disableYoloMode": false,
+    "environmentVariableRedaction": {
+      "enabled": true
+    },
+    "autoAddToPolicyByDefault": true,
+    "enablePermanentToolApproval": true
+  },
+  "general": {
+    "defaultApprovalMode": "default",
+    "notificationMethod": "bell",
+    "plan": {
+      "directory": ""
+    },
+    "sessionRetention": {
+      "maxAge": "30d"
+    },
+    "enableNotifications": true
+  },
+  "tools": {
+    "sandboxNetworkAccess": true
+  },
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": false,
+      "respectGeminiIgnore": false
+    }
+  }
+}

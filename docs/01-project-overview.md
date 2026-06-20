@@ -39,7 +39,7 @@ SEARCH ──(sees cap)──> APPROACH ──(close enough)──> COLLECT ─�
 |------|------|--------|
 | **Yashveer Sookun** | Vision Lead | `perception/` |
 | **Salawu Wareeth** | Pipeline / Logging | `utils/telemetry.py` |
-| **Mohammed Abubakr Khan** | Integration / QA | `tests/` |
+| **Mohammed Abubakr Khan** | Integration / QA | `robot_tests/` |
 | **Joaquín Morillo Soto** | Hardware / Mechanics | `hardware/` |
 | **Mohammad El Musleh** | Control Lead | `control/` + Jetson setup |
 | **Myron Sydorov** | Navigation / Recovery | `control/recovery.py` |

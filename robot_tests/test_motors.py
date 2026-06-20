@@ -5,7 +5,7 @@ Tests: Robot init, motor directions, stop, speed limits.
 WARNING: Robot will move briefly during tests. Place on blocks or keep clear area.
 """
 import time
-from tests.test_results import log
+from robot_tests.test_results import log
 
 
 def test_robot_init():

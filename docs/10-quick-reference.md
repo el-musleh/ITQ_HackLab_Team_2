@@ -102,7 +102,7 @@ Right-click notebook tab → Shut Down Kernel → Reopen notebook
 |------|------|--------|
 | Yashveer Sookun | Vision | `perception/` |
 | Salawu Wareeth | Logging | `utils/telemetry.py` |
-| Mohammed Abubakr Khan | QA | `tests/` |
+| Mohammed Abubakr Khan | QA | `robot_tests/` |
 | Joaquín Morillo Soto | Hardware | `hardware/` |
 | Mohammad El Musleh | Control + Operator | `control/` |
 | Myron Sydorov | Recovery | `control/recovery.py` |
