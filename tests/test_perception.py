@@ -22,8 +22,8 @@ def _get_frame(camera, source="jetbot"):
         return camera.value.copy() if camera.value is not None else None
     else:
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 300)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 300)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
         ret, frame = cap.read()
         cap.release()
         return frame if ret else None

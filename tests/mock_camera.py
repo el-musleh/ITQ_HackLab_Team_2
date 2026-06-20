@@ -1,11 +1,18 @@
 import numpy as np
+import threading
+import time
 
 class MockCamera:
     _instance = None
 
-    def __init__(self, width=300, height=300):
+    def __init__(self, width=320, height=240, fps=10):
         self.width = width
         self.height = height
+        self.fps = fps
+        self.callbacks = []
+        self._running = False
+        self._thread = None
+        
         # Generate a simulated frame
         self._frame = np.zeros((height, width, 3), dtype=np.uint8)
         
@@ -25,10 +32,50 @@ class MockCamera:
     def value(self):
         return self._frame
 
+    def observe(self, callback, names='value'):
+        if callback not in self.callbacks:
+            self.callbacks.append(callback)
+        if not self._running:
+            self._start_simulation()
+
+    def unobserve_all(self):
+        self.callbacks = []
+        self.stop()
+
+    def stop(self):
+        self._running = False
+        if self._thread is not None:
+            # Do not join to avoid blocking jupyter notebook cell execution
+            self._thread = None
+
+    def _start_simulation(self):
+        self._running = True
+        self._thread = threading.Thread(target=self._run_simulation)
+        self._thread.daemon = True
+        self._thread.start()
+
+    def _run_simulation(self):
+        dt = 1.0 / self.fps
+        while self._running:
+            time.sleep(dt)
+            # Create a change dict similar to traitlets/jetbot Camera
+            change = {
+                'new': self._frame,
+                'name': 'value',
+                'type': 'change',
+                'owner': self
+            }
+            # Call all observers safely
+            for cb in list(self.callbacks):
+                try:
+                    cb(change)
+                except Exception:
+                    pass
+
     @classmethod
     def instance(cls, *args, **kwargs):
         if cls._instance is None:
-            width = kwargs.get('width', 300)
-            height = kwargs.get('height', 300)
+            width = kwargs.get('width', 320)
+            height = kwargs.get('height', 240)
             cls._instance = cls(width=width, height=height)
         return cls._instance
