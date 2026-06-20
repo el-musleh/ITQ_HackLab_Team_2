@@ -40,7 +40,7 @@ CAP_CLOSE_SIZE   = 80     # bounding box px (width or height) → stop
 
 ROBOFLOW_API_KEY     = "Ub1KVwtGHHdLLKRzoxdG"
 ROBOFLOW_API_URL     = "https://serverless.roboflow.com/kais-workspace-stbmo/workflows/detect-count-and-visualize-3"
-CONFIDENCE_THRESHOLD = 0.80
+CONFIDENCE_THRESHOLD = 0.50   # lowered from 0.80 — easier to detect
 TARGET_CLASS         = "bottle cap"
 INFERENCE_INTERVAL   = 0.75   # seconds between API calls
 
@@ -193,9 +193,22 @@ def _inference_loop():
             best   = max(caps, key=lambda p: p['confidence']) if caps else None
             with _cap_lock:
                 _cap_det = best
+
+            # Always log what the API returned so we can diagnose
+            outputs = result.get('outputs', [])
+            all_preds = []
+            if outputs:
+                p = outputs[0].get('predictions', {})
+                if isinstance(p, dict):
+                    p = p.get('predictions', [])
+                all_preds = p or []
             if best:
-                print('\n[cap] x=%.0f y=%.0f w=%.0f conf=%.2f' % (
+                print('\n[cap FOUND] x=%.0f y=%.0f w=%.0f conf=%.2f' % (
                     best['x'], best['y'], best['width'], best['confidence']))
+            else:
+                classes = [('%s(%.2f)' % (p.get('class','?'), p.get('confidence',0)))
+                           for p in all_preds] if all_preds else ['nothing']
+                print('\n[API] no cap — saw: %s' % ', '.join(classes))
         except Exception as e:
             print('\n[Inference error]', e)
             with _cap_lock:
@@ -219,6 +232,30 @@ signal.signal(signal.SIGTERM, lambda s, f: (_shutdown(), sys.exit(0)))
 
 # ── Entry point ───────────────────────────────────────────────────────────
 if __name__ == '__main__':
+    import sys as _sys
+
+    if '--test' in _sys.argv:
+        # One-shot inference: print full raw API response and exit.
+        print('TEST MODE — grabbing one frame and calling Roboflow...')
+        time.sleep(1.0)   # let camera warm up
+        frame = camera.value.copy()
+        try:
+            result = _infer_frame(frame)
+            import json as _json
+            print('=== RAW RESPONSE ===')
+            print(_json.dumps(result, indent=2))
+            caps = _extract_caps(result)
+            print('=== CAPS FOUND (conf >= %.2f) ===' % CONFIDENCE_THRESHOLD)
+            for c in caps:
+                print('  x=%.0f y=%.0f w=%.0f h=%.0f conf=%.2f' % (
+                    c['x'], c['y'], c['width'], c['height'], c['confidence']))
+            if not caps:
+                print('  (none)')
+        except Exception as e:
+            print('FAILED:', e)
+        safe_stop()
+        _sys.exit(0)
+
     nav_state = 'SCAN'
     with _cap_lock:
         _cap_det = None
