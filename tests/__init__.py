@@ -7,3 +7,5 @@ Or:   Open tests/test_runner.ipynb in JupyterLab and run all cells
 Each test module is self-contained and reports its own results.
 Tests can be run independently or as part of the full suite.
 """
+
+from . import test_results
