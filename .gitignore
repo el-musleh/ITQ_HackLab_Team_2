@@ -63,6 +63,26 @@ venv.bak/
 # ========================================
 logs/*.log
 logs/*.txt
+
+# SCSCtrl / local package build artifacts
+SCSCtrl.egg-info/
+*.egg-info/
+
+# Recursive Python cache (covers subdirectories too)
+**/__pycache__/
+**/*.py[cod]
+
+# Jetson GPU cache
+.nv/
+
+# Test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Local package wheels
+*.whl
 # Recorded demo videos (large files)
 *.mp4
 *.avi
