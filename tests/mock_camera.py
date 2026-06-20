@@ -1,15 +1,17 @@
+import traitlets
 import numpy as np
 import threading
 import time
 
-class MockCamera:
+class MockCamera(traitlets.HasTraits):
     _instance = None
+    value = traitlets.Any()
 
     def __init__(self, width=320, height=240, fps=10):
+        super().__init__()
         self.width = width
         self.height = height
         self.fps = fps
-        self.callbacks = []
         self._running = False
         self._thread = None
         
@@ -27,26 +29,18 @@ class MockCamera:
         o_start = int(height * 0.3)
         o_end = int(height * 0.5)
         self._frame[o_start:o_end, int(width*0.25):int(width*0.75)] = [128, 128, 128]
+        
+        # Set initial value and start thread
+        self.value = self._frame
+        self._start_simulation()
 
-    @property
-    def value(self):
-        return self._frame
-
-    def observe(self, callback, names='value'):
-        if callback not in self.callbacks:
-            self.callbacks.append(callback)
+    def start(self):
         if not self._running:
             self._start_simulation()
 
-    def unobserve_all(self):
-        self.callbacks = []
-        self.stop()
-
     def stop(self):
         self._running = False
-        if self._thread is not None:
-            # Do not join to avoid blocking jupyter notebook cell execution
-            self._thread = None
+        self._thread = None
 
     def _start_simulation(self):
         self._running = True
@@ -58,19 +52,8 @@ class MockCamera:
         dt = 1.0 / self.fps
         while self._running:
             time.sleep(dt)
-            # Create a change dict similar to traitlets/jetbot Camera
-            change = {
-                'new': self._frame,
-                'name': 'value',
-                'type': 'change',
-                'owner': self
-            }
-            # Call all observers safely
-            for cb in list(self.callbacks):
-                try:
-                    cb(change)
-                except Exception:
-                    pass
+            # Re-assign to trigger traitlet observation
+            self.value = self._frame.copy()
 
     @classmethod
     def instance(cls, *args, **kwargs):

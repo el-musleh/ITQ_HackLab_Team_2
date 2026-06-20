@@ -87,21 +87,16 @@ groupSyncWrite = GroupSyncWrite(portHandler, packetHandler, ADDR_STS_GOAL_POSITI
 # Open port
 if portHandler.openPort():
     print("Succeeded to open the port")
+    # Set port baudrate
+    if portHandler.setBaudRate(BAUDRATE):
+        print("Succeeded to change the baudrate")
+    else:
+        print("Failed to change the baudrate")
+        print("Continuing in mock/headless mode without physical serial connection.")
 else:
     print("Failed to open the port")
-    print("Press any key to terminate...")
-    getch()
-    quit()
+    print("Continuing in mock/headless mode without physical serial connection.")
 
-
-# Set port baudrate
-if portHandler.setBaudRate(BAUDRATE):
-    print("Succeeded to change the baudrate")
-else:
-    print("Failed to change the baudrate")
-    print("Press any key to terminate...")
-    getch()
-    quit()
 
 
 def syncCtrl(ID_List, Speed_List, Goal_List):
