@@ -3,11 +3,17 @@ import os
 import subprocess
 import json
 import sys
+import io
+
+# Configure stdout and stderr to use UTF-8
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 def run_notebook(notebook_path):
     print(f"\n==================================================")
     print(f"RUNNING: {notebook_path}")
     print(f"==================================================")
+    sys.stdout.flush()
     
     cmd = [
         "jupyter", "nbconvert", 
@@ -35,11 +41,13 @@ def run_notebook(notebook_path):
     
     if process.returncode == 0:
         print(f"SUCCESS: {notebook_path}")
+        sys.stdout.flush()
         return True, ""
     else:
         print(f"FAILED: {notebook_path}")
         print("--- Execution Error Details ---")
         print(stderr)
+        sys.stdout.flush()
         return False, stderr
 
 def main():
@@ -56,6 +64,7 @@ def main():
     print(f"Found {len(notebooks)} notebooks to test:")
     for nb in notebooks:
         print(f"  - {nb}")
+    sys.stdout.flush()
         
     results = {}
     failed = []
@@ -71,14 +80,17 @@ def main():
     for nb, success in results.items():
         status = "PASSED" if success else "FAILED"
         print(f"{nb}: {status}")
+    sys.stdout.flush()
         
     if failed:
         print(f"\nThere are {len(failed)} failed notebooks:")
         for nb, _ in failed:
             print(f"  - {nb}")
+        sys.stdout.flush()
         sys.exit(1)
     else:
         print("\nAll notebooks ran successfully!")
+        sys.stdout.flush()
         sys.exit(0)
 
 if __name__ == "__main__":

@@ -85,11 +85,13 @@ packetHandler = PacketHandler(protocol_end)
 groupSyncWrite = GroupSyncWrite(portHandler, packetHandler, ADDR_STS_GOAL_POSITION, 2)
 
 # Open port
+port_opened = False
 if portHandler.openPort():
     print("Succeeded to open the port")
     # Set port baudrate
     if portHandler.setBaudRate(BAUDRATE):
         print("Succeeded to change the baudrate")
+        port_opened = True
     else:
         print("Failed to change the baudrate")
         print("Continuing in mock/headless mode without physical serial connection.")
@@ -98,8 +100,9 @@ else:
     print("Continuing in mock/headless mode without physical serial connection.")
 
 
-
 def syncCtrl(ID_List, Speed_List, Goal_List):
+    if not port_opened:
+        return
     positionList = []
 
     for i in range(0, len(ID_List)):
@@ -120,6 +123,8 @@ def syncCtrl(ID_List, Speed_List, Goal_List):
 
 
 def infoSingleGet(SCID):
+    if not port_opened:
+        return 512
     scs_present_position_speed, scs_comm_result, scs_error = packetHandler.read4ByteTxRx(portHandler, SCID, ADDR_SCS_PRESENT_POSITION)
     # if scs_comm_result != COMM_SUCCESS:
     #     print("%s" % packetHandler.getTxRxResult(scs_comm_result))
@@ -325,6 +330,9 @@ def xyInput(xInput, yInput):
 
 
 def nowPosUpdate(servoNumInput):
+    if not port_opened:
+        nowPos[servoNumInput] = 512
+        return 512
     scs_present_position_speed, scs_comm_result, scs_error = packetHandler.read4ByteTxRx(portHandler, servoNumInput, ADDR_SCS_PRESENT_POSITION)
     scs_present_position = SCS_LOWORD(scs_present_position_speed)
     
@@ -356,6 +364,8 @@ def xyInputSmooth(xInput, yInput, dt):
 
 
 def servoStop(servoNum):
+    if not port_opened:
+        return
     scs_present_position_speed, scs_comm_result, scs_error = packetHandler.read4ByteTxRx(portHandler, servoNum, ADDR_SCS_PRESENT_POSITION)
     if scs_comm_result != COMM_SUCCESS:
         print(packetHandler.getTxRxResult(scs_comm_result))
