@@ -3,6 +3,7 @@ import atexit
 import cv2
 import threading
 import numpy as np
+import sys
 from .camera_base import CameraBase
 
 class MockCamera(traitlets.HasTraits):
@@ -69,21 +70,34 @@ class OpenCvGstCamera(CameraBase):
     def __init__(self, *args, **kwargs):
         self.value = np.empty((self.height, self.width, 3), dtype=np.uint8)
         super().__init__(self, *args, **kwargs)
+        self._use_v4l2 = False
 
         try:
+            # 1. Try GStreamer first
             self.cap = cv2.VideoCapture(self._gst_str(), cv2.CAP_GSTREAMER)
-
             re, image = self.cap.read()
-
             if not re:
-                raise RuntimeError('Could not read image from camera.')
-
+                raise RuntimeError('GStreamer read returned False')
             self.value = image
             self.start()
-        except:
-            self.stop()
-            raise RuntimeError(
-                'Could not initialize camera.  Please see error trace.')
+            print("Real GStreamer camera initialized successfully.")
+        except Exception as e_gst:
+            print("GStreamer camera failed: {}".format(e_gst))
+            print("Trying direct V4L2 camera fallback on /dev/video0...")
+            try:
+                # 2. Try V4L2 fallback on /dev/video0
+                self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+                re, image = self.cap.read()
+                if not re:
+                    raise RuntimeError('V4L2 read returned False')
+                self._use_v4l2 = True
+                self.value = cv2.resize(image, (self.width, self.height))
+                self.start()
+                print("Direct V4L2 camera fallback initialized successfully.")
+            except Exception as e_v4l2:
+                print("V4L2 direct camera fallback failed: {}".format(e_v4l2))
+                self.stop()
+                raise RuntimeError('Could not initialize camera via GStreamer or V4L2.')
 
         atexit.register(self.stop)
 
@@ -91,6 +105,8 @@ class OpenCvGstCamera(CameraBase):
         while True:
             re, image = self.cap.read()
             if re:
+                if self._use_v4l2:
+                    image = cv2.resize(image, (self.width, self.height))
                 self.value = image
             else:
                 break
@@ -101,7 +117,10 @@ class OpenCvGstCamera(CameraBase):
     
     def start(self):
         if not self.cap.isOpened():
-            self.cap.open(self._gst_str(), cv2.CAP_GSTREAMER)
+            if self._use_v4l2:
+                self.cap.open(0, cv2.CAP_V4L2)
+            else:
+                self.cap.open(self._gst_str(), cv2.CAP_GSTREAMER)
         if not hasattr(self, 'thread') or not self.thread.isAlive():
             self.thread = threading.Thread(target=self._capture_frames)
             self.thread.start()
@@ -121,5 +140,5 @@ class OpenCvGstCamera(CameraBase):
         try:
             return OpenCvGstCamera(*args, **kwargs)
         except Exception as e:
-            print("Could not initialize real camera. Falling back to MockCamera.")
+            print("Could not initialize real GStreamer or V4L2 camera. Falling back to MockCamera.")
             return MockCamera.instance(*args, **kwargs)
