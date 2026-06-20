@@ -164,6 +164,7 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 ```
 .
 ├── README.md                    # This file
+├── setup.sh                     # One-command setup for all team members
 ├── requirements.txt             # Python dependencies
 ├── main.py                      # Entry point — state machine orchestrator
 ├── config.yaml                  # Camera thresholds, PID gains, course params
@@ -242,20 +243,41 @@ Camera Feed
 - WiFi connected
 - Git
 
-### Dependencies (install on Jetson)
+### One-Command Setup (All Team Members)
+```bash
+# 1. Clone the project
+git clone <repo-url>
+cd itq-bottle-cap-collector
+
+# 2. Run the setup script (installs everything)
+./setup.sh
+
+# 3. Activate the virtual environment
+source venv/bin/activate
+
+# 4. Start working
+jupyter notebook --ip=0.0.0.0 --port=8888
+```
+
+**What `setup.sh` does:**
+1. Installs system dependencies (`python3-pip`, `git`, `libgl1`, etc.)
+2. Creates a Python virtual environment (`venv/`)
+3. Installs Python packages (OpenCV, NumPy, PySerial, Ultralytics, Jupyter)
+4. Installs the `SCSCtrl` servo library from local source
+5. Creates the project directory structure
+6. Generates starter files (`main.py`, `config.yaml`)
+7. Verifies all installations
+
+### Manual Dependencies (if setup.sh fails)
 ```bash
 # Core (Jetson-optimized)
-pip install opencv-python numpy matplotlib
+pip install opencv-python numpy matplotlib pyserial imutils
 
 # JETANK servo control
-pip install pyserial
-# Or use included SCSCtrl: https://github.com/waveshare/JETANK/tree/master/SCSCtrl
+pip install -e .  # from project root, installs SCSCtrl
 
 # Detection (optional — color blob may be enough)
 pip install ultralytics
-
-# Jetson inference (if using TensorRT / trt_pose)
-pip install jetson-inference
 ```
 
 ### Hardware Checklist
