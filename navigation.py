@@ -36,13 +36,13 @@ MAX_SPEED        = 0.25
 SCAN_TURN_SPEED  = 0.12   # rotation speed while scanning
 APPROACH_SPEED   = 0.18   # forward speed while approaching
 CENTER_TOLERANCE = 30     # px offset from frame centre to consider "centred"
-CAP_CLOSE_SIZE   = 80     # bounding box px (width or height) -> stop
+CAP_BOTTOM_FRAC  = 0.80   # cap centre y / frame height to trigger grab (0=top, 1=bottom)
 
 ROBOFLOW_API_KEY     = "Ub1KVwtGHHdLLKRzoxdG"
 ROBOFLOW_API_URL     = "https://serverless.roboflow.com/kais-workspace-stbmo/workflows/detect-count-and-visualize-3"
 CONFIDENCE_THRESHOLD = 0.50   # lowered from 0.80 -- easier to detect
 TARGET_CLASS         = "bottle cap"
-INFERENCE_INTERVAL   = 0.75   # seconds between API calls
+INFERENCE_INTERVAL   = 0.20   # seconds between API calls
 
 # -- Hardware init ---------------------------------------------------------
 if _servo_available:
@@ -206,10 +206,10 @@ def execute():
         elif nav_state == 'APPROACH_CAP':
             if cap is None:
                 nav_state = 'SCAN'
-            elif max(cap.get('width', 0), cap.get('height', 0)) >= CAP_CLOSE_SIZE:
+            elif cap.get('y', 0) >= CAMERA_HEIGHT * CAP_BOTTOM_FRAC:
                 nav_state = 'AT_CAP'
                 safe_stop()
-                print('\n>>> AT CAP -- stopped in front of bottle cap.')
+                print('\n>>> AT CAP -- cap at bottom of frame, stopping to grab.')
             else:
                 offset = cap['x'] - (CAMERA_WIDTH / 2.0)
                 if abs(offset) > CENTER_TOLERANCE * 2:
@@ -221,7 +221,7 @@ def execute():
 
         set_drive(left_spd, right_spd)
 
-        cap_info = ('x=%.0f w=%.0f' % (cap['x'], cap['width'])) if cap else 'none'
+        cap_info = ('x=%.0f y=%.0f w=%.0f' % (cap['x'], cap['y'], cap['width'])) if cap else 'none'
         print('\r%-14s cap=%-14s L=%+.2f R=%+.2f' % (
             nav_state, cap_info, left_spd, right_spd), end='', flush=True)
 
@@ -233,6 +233,7 @@ def execute():
 def _inference_loop():
     global _cap_det, _locked_x, _lock_lost
     while _infer_running:
+        t0 = time.time()
         try:
             frame  = camera.value.copy()
             result = _infer_frame(frame)
@@ -244,8 +245,8 @@ def _inference_loop():
                 if best:
                     _locked_x  = best['x']
                     _lock_lost = 0
-                    print('\n[LOCK] new cap at x=%.0f w=%.0f conf=%.2f' % (
-                        best['x'], best['width'], best['confidence']))
+                    print('\n[LOCK] new cap at x=%.0f y=%.0f conf=%.2f' % (
+                        best['x'], best['y'], best['confidence']))
             else:
                 # Locked -- only accept detections near the locked x position
                 near = [c for c in caps if abs(c['x'] - _locked_x) < LOCK_TOLERANCE]
@@ -253,8 +254,6 @@ def _inference_loop():
                     best = min(near, key=lambda c: abs(c['x'] - _locked_x))
                     _locked_x  = best['x']
                     _lock_lost = 0
-                    print('\n[LOCK] tracking x=%.0f w=%.0f conf=%.2f' % (
-                        best['x'], best['width'], best['confidence']))
                 else:
                     _lock_lost += 1
                     if _lock_lost >= LOCK_MAX_LOST:
@@ -272,7 +271,12 @@ def _inference_loop():
             print('\n[Inference error]', e)
             with _cap_lock:
                 _cap_det = None
-        time.sleep(INFERENCE_INTERVAL)
+
+        # Sleep only the time remaining in the interval (API call already ate some of it)
+        elapsed = time.time() - t0
+        gap = INFERENCE_INTERVAL - elapsed
+        if gap > 0:
+            time.sleep(gap)
 
 def _nav_loop():
     while running:
