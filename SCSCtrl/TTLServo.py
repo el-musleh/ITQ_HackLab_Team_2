@@ -12,11 +12,11 @@ servoDirection = [1,-1]
 servoInputRange = 850
 servoAngleRange = 180
 
-servoInit = [None, 512, 512, 512, 512, 512]
+servoInit = [None, 512, 512, 512, 512, 512, 512]
 
-nowPos = [None, 512, 512, 512, 512, 512]
-nextPos = [None, 512, 512, 512, 512, 512]
-speedBuffer = [None, 512, 512, 512, 512, 512]
+nowPos = [None, 512, 512, 512, 512, 512, 512]
+nextPos = [None, 512, 512, 512, 512, 512, 512]
+speedBuffer = [None, 512, 512, 512, 512, 512, 512]
 
 xMax = 150
 xMin = 90
