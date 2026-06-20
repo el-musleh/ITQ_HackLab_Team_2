@@ -137,7 +137,7 @@ def execute():
 
         elif nav_state == 'SCAN':
             if cap is not None:
-                nav_state = 'CENTER_CAP'
+                nav_state = 'APPROACH_CAP'   # go immediately, skip stationary centering
             else:
                 left_spd  =  SCAN_TURN_SPEED
                 right_spd = -SCAN_TURN_SPEED
@@ -171,8 +171,8 @@ def execute():
                     nav_state = 'CENTER_CAP'
                 else:
                     correction = (offset / (CAMERA_WIDTH / 2.0)) * APPROACH_SPEED * 0.4
-                    left_spd  = APPROACH_SPEED - correction
-                    right_spd = APPROACH_SPEED + correction
+                    left_spd  = -(APPROACH_SPEED + correction)
+                    right_spd = -(APPROACH_SPEED - correction)
 
         set_drive(left_spd, right_spd)
 
