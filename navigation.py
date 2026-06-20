@@ -75,6 +75,38 @@ def set_drive(left, right):
     except Exception:
         pass
 
+# -- Arm / claw ------------------------------------------------------------
+CLAW_SERVO_ID = 4
+CLAW_OPEN     = -10
+CLAW_CLOSED   = -75
+ARM_HOME_X    = 130
+ARM_HOME_Y    = 20
+ARM_DOWN_X    = 150
+ARM_DOWN_Y    = -138
+ARM_UP_X      = 120
+ARM_UP_Y      = 45
+
+def _pick_cap():
+    if not _servo_available:
+        print('[ARM] servo not available -- skipping pick.')
+        return
+    try:
+        print('\nARM: home...')
+        TTLServo.xyInputSmooth(ARM_HOME_X, ARM_HOME_Y, 0.5);      time.sleep(2.0)
+        print('ARM: open claw...')
+        TTLServo.servoAngleCtrl(CLAW_SERVO_ID, CLAW_OPEN, 1, 150); time.sleep(1.0)
+        print('ARM: lower to cap...')
+        TTLServo.xyInputSmooth(ARM_DOWN_X, ARM_DOWN_Y, 0.5);       time.sleep(2.0)
+        print('ARM: grab...')
+        TTLServo.servoAngleCtrl(CLAW_SERVO_ID, CLAW_CLOSED, 1, 150); time.sleep(2.0)
+        print('ARM: lift...')
+        TTLServo.xyInputSmooth(ARM_UP_X, ARM_UP_Y, 0.8);           time.sleep(2.0)
+        print('ARM: home with cap.')
+        TTLServo.xyInputSmooth(ARM_HOME_X, ARM_HOME_Y, 0.8);       time.sleep(2.0)
+        print('Cap picked. Resuming scan...')
+    except Exception as e:
+        print('[ARM ERROR]', e)
+
 # -- Roboflow inference ----------------------------------------------------
 def _infer_frame(frame):
     ok, enc = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
@@ -121,6 +153,12 @@ _infer_running = False
 _cap_lock      = threading.Lock()
 _cap_det       = None
 
+# Lock-on: once we pick a cap to chase we ignore all others
+_locked_x      = None   # x-coord of the cap we committed to
+_lock_lost     = 0      # consecutive inference cycles without the locked cap
+LOCK_TOLERANCE = 80     # px -- how far the locked cap can drift before re-id
+LOCK_MAX_LOST  = 2      # inference cycles before releasing lock and re-scanning
+
 # -- Frame loop ------------------------------------------------------------
 def execute():
     global nav_state
@@ -133,7 +171,15 @@ def execute():
 
     try:
         if nav_state == 'AT_CAP':
-            pass
+            # Pick the cap, release lock, then scan for the next one
+            safe_stop()
+            _pick_cap()
+            global _locked_x, _lock_lost
+            _locked_x  = None
+            _lock_lost = 0
+            with _cap_lock:
+                _cap_det = None
+            nav_state = 'SCAN'
 
         elif nav_state == 'SCAN':
             if cap is not None:
@@ -186,31 +232,43 @@ def execute():
 
 # -- Background threads ----------------------------------------------------
 def _inference_loop():
-    global _cap_det
+    global _cap_det, _locked_x, _lock_lost
     while _infer_running:
         try:
             frame  = camera.value.copy()
             result = _infer_frame(frame)
             caps   = _extract_caps(result)
-            best   = max(caps, key=lambda p: max(p.get('width', 0), p.get('height', 0))) if caps else None
+
+            if _locked_x is None:
+                # No lock yet -- pick the closest cap (largest bbox)
+                best = max(caps, key=lambda p: max(p.get('width', 0), p.get('height', 0))) if caps else None
+                if best:
+                    _locked_x  = best['x']
+                    _lock_lost = 0
+                    print('\n[LOCK] new cap at x=%.0f w=%.0f conf=%.2f' % (
+                        best['x'], best['width'], best['confidence']))
+            else:
+                # Locked -- only accept detections near the locked x position
+                near = [c for c in caps if abs(c['x'] - _locked_x) < LOCK_TOLERANCE]
+                if near:
+                    best = min(near, key=lambda c: abs(c['x'] - _locked_x))
+                    _locked_x  = best['x']
+                    _lock_lost = 0
+                    print('\n[LOCK] tracking x=%.0f w=%.0f conf=%.2f' % (
+                        best['x'], best['width'], best['confidence']))
+                else:
+                    _lock_lost += 1
+                    if _lock_lost >= LOCK_MAX_LOST:
+                        print('\n[LOCK] lost cap -- releasing lock, back to SCAN')
+                        _locked_x  = None
+                        _lock_lost = 0
+                        best = None
+                    else:
+                        best = _cap_det  # hold last known position briefly
+
             with _cap_lock:
                 _cap_det = best
 
-            # Always log what the API returned so we can diagnose
-            outputs = result.get('outputs', [])
-            all_preds = []
-            if outputs:
-                p = outputs[0].get('predictions', {})
-                if isinstance(p, dict):
-                    p = p.get('predictions', [])
-                all_preds = p or []
-            if best:
-                print('\n[cap FOUND] x=%.0f y=%.0f w=%.0f conf=%.2f' % (
-                    best['x'], best['y'], best['width'], best['confidence']))
-            else:
-                classes = [('%s(%.2f)' % (p.get('class','?'), p.get('confidence',0)))
-                           for p in all_preds] if all_preds else ['nothing']
-                print('\n[API] no cap -- saw: %s' % ', '.join(classes))
         except Exception as e:
             print('\n[Inference error]', e)
             with _cap_lock:
