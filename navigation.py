@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-navigation.py — Autonomous bottle-cap detection and approach.
-JETANK AI Kit · Jetson Nano
+navigation.py -- Autonomous bottle-cap detection and approach.
+JETANK AI Kit . Jetson Nano
 
-States: SCAN → CENTER_CAP → APPROACH_CAP → AT_CAP
+States: SCAN -> CENTER_CAP -> APPROACH_CAP -> AT_CAP
 
 Run:   python3 navigation.py
 Stop:  Ctrl+C
@@ -25,9 +25,9 @@ try:
     _servo_available = True
 except Exception:
     _servo_available = False
-    print('TTLServo not available — camera tilt skipped.')
+    print('TTLServo not available -- camera tilt skipped.')
 
-# ── Configuration ─────────────────────────────────────────────────────────
+# -- Configuration ---------------------------------------------------------
 CAMERA_WIDTH     = 300
 CAMERA_HEIGHT    = 300
 CAMERA_TILT_DOWN = 22
@@ -36,15 +36,15 @@ MAX_SPEED        = 0.25
 SCAN_TURN_SPEED  = 0.12   # rotation speed while scanning
 APPROACH_SPEED   = 0.08   # forward speed while approaching
 CENTER_TOLERANCE = 30     # px offset from frame centre to consider "centred"
-CAP_CLOSE_SIZE   = 80     # bounding box px (width or height) → stop
+CAP_CLOSE_SIZE   = 80     # bounding box px (width or height) -> stop
 
 ROBOFLOW_API_KEY     = "Ub1KVwtGHHdLLKRzoxdG"
 ROBOFLOW_API_URL     = "https://serverless.roboflow.com/kais-workspace-stbmo/workflows/detect-count-and-visualize-3"
-CONFIDENCE_THRESHOLD = 0.50   # lowered from 0.80 — easier to detect
+CONFIDENCE_THRESHOLD = 0.50   # lowered from 0.80 -- easier to detect
 TARGET_CLASS         = "bottle cap"
 INFERENCE_INTERVAL   = 0.75   # seconds between API calls
 
-# ── Hardware init ─────────────────────────────────────────────────────────
+# -- Hardware init ---------------------------------------------------------
 if _servo_available:
     try:
         TTLServo.servoAngleCtrl(1, 0, 1, 100)
@@ -60,7 +60,7 @@ robot  = Robot()
 robot.stop()
 print('Camera + Robot ready.')
 
-# ── Motor helpers ─────────────────────────────────────────────────────────
+# -- Motor helpers ---------------------------------------------------------
 def safe_stop():
     try:
         robot.left_motor.value  = 0.0
@@ -75,7 +75,7 @@ def set_drive(left, right):
     except Exception:
         pass
 
-# ── Roboflow inference ────────────────────────────────────────────────────
+# -- Roboflow inference ----------------------------------------------------
 def _infer_frame(frame):
     ok, enc = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
     if not ok:
@@ -114,14 +114,14 @@ def _extract_caps(result):
             if p.get('class') == TARGET_CLASS
             and p.get('confidence', 0) >= CONFIDENCE_THRESHOLD]
 
-# ── State ─────────────────────────────────────────────────────────────────
+# -- State -----------------------------------------------------------------
 nav_state      = 'SCAN'
 running        = False
 _infer_running = False
 _cap_lock      = threading.Lock()
 _cap_det       = None
 
-# ── Frame loop ────────────────────────────────────────────────────────────
+# -- Frame loop ------------------------------------------------------------
 def execute():
     global nav_state
 
@@ -162,7 +162,7 @@ def execute():
             elif max(cap.get('width', 0), cap.get('height', 0)) >= CAP_CLOSE_SIZE:
                 nav_state = 'AT_CAP'
                 safe_stop()
-                print('\n>>> AT CAP — stopped in front of bottle cap.')
+                print('\n>>> AT CAP -- stopped in front of bottle cap.')
             else:
                 offset = cap['x'] - (CAMERA_WIDTH / 2.0)
                 if abs(offset) > CENTER_TOLERANCE * 2:
@@ -182,7 +182,7 @@ def execute():
         safe_stop()
         print('\n[ERROR]', e)
 
-# ── Background threads ────────────────────────────────────────────────────
+# -- Background threads ----------------------------------------------------
 def _inference_loop():
     global _cap_det
     while _infer_running:
@@ -208,7 +208,7 @@ def _inference_loop():
             else:
                 classes = [('%s(%.2f)' % (p.get('class','?'), p.get('confidence',0)))
                            for p in all_preds] if all_preds else ['nothing']
-                print('\n[API] no cap — saw: %s' % ', '.join(classes))
+                print('\n[API] no cap -- saw: %s' % ', '.join(classes))
         except Exception as e:
             print('\n[Inference error]', e)
             with _cap_lock:
@@ -220,7 +220,7 @@ def _nav_loop():
         execute()
         time.sleep(1 / 30)
 
-# ── Shutdown ──────────────────────────────────────────────────────────────
+# -- Shutdown --------------------------------------------------------------
 def _shutdown():
     global running, _infer_running
     print('\nShutting down...')
@@ -230,13 +230,13 @@ def _shutdown():
 
 signal.signal(signal.SIGTERM, lambda s, f: (_shutdown(), sys.exit(0)))
 
-# ── Entry point ───────────────────────────────────────────────────────────
+# -- Entry point -----------------------------------------------------------
 if __name__ == '__main__':
     import sys as _sys
 
     if '--test' in _sys.argv:
         # One-shot inference: print full raw API response and exit.
-        print('TEST MODE — grabbing one frame and calling Roboflow...')
+        print('TEST MODE -- grabbing one frame and calling Roboflow...')
         time.sleep(1.0)   # let camera warm up
         frame = camera.value.copy()
         try:
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     threading.Thread(target=_nav_loop,       daemon=True).start()
 
     print('Running. Ctrl+C to stop.')
-    print('SCAN — rotating to find bottle caps...\n')
+    print('SCAN -- rotating to find bottle caps...\n')
 
     try:
         while True:
