@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-navigation.py -- Autonomous bottle-cap detection and approach.
+navigation.py -- Autonomous bottle-cap detection, collection and deposit.
 JETANK AI Kit . Jetson Nano
 
-States: SCAN -> CENTER_CAP -> APPROACH_CAP -> AT_CAP
+States: SCAN -> APPROACH_CAP -> AT_CAP -> RETURN_TO_BOX -> DEPOSIT -> SCAN
 
 Run:   python3 navigation.py
 Stop:  Ctrl+C
@@ -17,6 +17,7 @@ import sys
 import threading
 import time
 from urllib import request as _ul_req
+import numpy as np
 
 from jetbot import Camera, Robot
 
@@ -37,6 +38,12 @@ SCAN_TURN_SPEED  = 0.12   # rotation speed while scanning
 APPROACH_SPEED   = 0.18   # forward speed while approaching
 CENTER_TOLERANCE = 30     # px offset from frame centre to consider "centred"
 CAP_BOTTOM_FRAC  = 0.80   # cap centre y / frame height to trigger grab (0=top, 1=bottom)
+
+# Basket (box) detection -- gray box: low saturation, mid brightness
+BOX_HSV_LOWER  = (0,   0,  60)    # any hue, near-zero saturation, not black
+BOX_HSV_UPPER  = (180, 60, 190)   # any hue, low saturation, not white
+BOX_MIN_AREA   = 500              # ignore tiny blobs
+BOX_DROP_AREA  = 6000             # area px^2 -> "close enough, deposit now"
 
 ROBOFLOW_API_KEY     = "Ub1KVwtGHHdLLKRzoxdG"
 ROBOFLOW_API_URL     = "https://serverless.roboflow.com/kais-workspace-stbmo/workflows/detect-count-and-visualize-3"
@@ -103,9 +110,39 @@ def _pick_cap():
         TTLServo.xyInputSmooth(ARM_UP_X, ARM_UP_Y, 0.8);           time.sleep(2.0)
         print('ARM: home with cap.')
         TTLServo.xyInputSmooth(ARM_HOME_X, ARM_HOME_Y, 0.8);       time.sleep(2.0)
-        print('Cap picked. Resuming scan...')
+        print('Cap picked.')
     except Exception as e:
         print('[ARM ERROR]', e)
+
+def _drop_cap():
+    if not _servo_available:
+        print('[ARM] servo not available -- skipping drop.')
+        return
+    try:
+        print('\nARM: releasing cap into basket...')
+        TTLServo.servoAngleCtrl(CLAW_SERVO_ID, CLAW_OPEN, 1, 150)
+        time.sleep(1.5)
+        print('ARM: home.')
+        TTLServo.xyInputSmooth(ARM_HOME_X, ARM_HOME_Y, 0.8)
+        time.sleep(2.0)
+        print('Cap deposited.')
+    except Exception as e:
+        print('[ARM ERROR]', e)
+
+# -- Basket detection (local CV, no API) -----------------------------------
+def detect_box(frame):
+    hsv  = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, np.array(BOX_HSV_LOWER), np.array(BOX_HSV_UPPER))
+    cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not cnts:
+        return False, 0, 0
+    c    = max(cnts, key=cv2.contourArea)
+    area = cv2.contourArea(c)
+    if area < BOX_MIN_AREA:
+        return False, 0, 0
+    M  = cv2.moments(c)
+    bx = int(M['m10'] / M['m00']) if M['m00'] else frame.shape[1] // 2
+    return True, bx, area
 
 # -- Roboflow inference ----------------------------------------------------
 def _infer_frame(frame):
@@ -152,6 +189,7 @@ running        = False
 _infer_running = False
 _cap_lock      = threading.Lock()
 _cap_det       = None
+has_cap        = False   # True while robot is carrying a collected cap
 
 # Lock-on: once we pick a cap to chase we ignore all others
 _locked_x      = None   # x-coord of the cap we committed to
@@ -161,7 +199,7 @@ LOCK_MAX_LOST  = 2      # inference cycles before releasing lock and re-scanning
 
 # -- Frame loop ------------------------------------------------------------
 def execute():
-    global nav_state, _cap_det, _locked_x, _lock_lost
+    global nav_state, _cap_det, _locked_x, _lock_lost, has_cap
 
     with _cap_lock:
         cap = _cap_det
@@ -171,18 +209,50 @@ def execute():
 
     try:
         if nav_state == 'AT_CAP':
-            # Pick the cap, release lock, then scan for the next one
             safe_stop()
             _pick_cap()
+            has_cap    = True
             _locked_x  = None
             _lock_lost = 0
             with _cap_lock:
                 _cap_det = None
+            nav_state = 'RETURN_TO_BOX'
+            print('\n>>> CAP SECURED -- heading to basket.')
+
+        elif nav_state == 'RETURN_TO_BOX':
+            frame = camera.value
+            box_detected, box_x, box_area = detect_box(frame)
+            if box_detected:
+                if box_area >= BOX_DROP_AREA:
+                    safe_stop()
+                    nav_state = 'DEPOSIT'
+                    print('\n>>> BASKET REACHED -- depositing cap.')
+                else:
+                    offset = box_x - (CAMERA_WIDTH / 2.0)
+                    if offset < -CENTER_TOLERANCE:
+                        left_spd  =  SCAN_TURN_SPEED
+                        right_spd = -SCAN_TURN_SPEED
+                    elif offset > CENTER_TOLERANCE:
+                        left_spd  = -SCAN_TURN_SPEED
+                        right_spd =  SCAN_TURN_SPEED
+                    else:
+                        left_spd  = -APPROACH_SPEED
+                        right_spd = -APPROACH_SPEED
+            else:
+                # basket not visible -- spin slowly to search
+                left_spd  =  SCAN_TURN_SPEED
+                right_spd = -SCAN_TURN_SPEED
+
+        elif nav_state == 'DEPOSIT':
+            safe_stop()
+            _drop_cap()
+            has_cap   = False
             nav_state = 'SCAN'
+            print('\n>>> CAP DROPPED -- back to scanning.')
 
         elif nav_state == 'SCAN':
-            if cap is not None:
-                nav_state = 'APPROACH_CAP'   # go immediately, skip stationary centering
+            if cap is not None and not has_cap:
+                nav_state = 'APPROACH_CAP'
             else:
                 left_spd  =  SCAN_TURN_SPEED
                 right_spd = -SCAN_TURN_SPEED
@@ -195,11 +265,9 @@ def execute():
                 if abs(offset) < CENTER_TOLERANCE:
                     nav_state = 'APPROACH_CAP'
                 elif offset > 0:
-                    # cap right of centre -> turn right
                     left_spd  = -SCAN_TURN_SPEED
                     right_spd =  SCAN_TURN_SPEED
                 else:
-                    # cap left of centre -> turn left
                     left_spd  =  SCAN_TURN_SPEED
                     right_spd = -SCAN_TURN_SPEED
 
@@ -221,9 +289,10 @@ def execute():
 
         set_drive(left_spd, right_spd)
 
-        cap_info = ('x=%.0f y=%.0f w=%.0f' % (cap['x'], cap['y'], cap['width'])) if cap else 'none'
-        print('\r%-14s cap=%-14s L=%+.2f R=%+.2f' % (
-            nav_state, cap_info, left_spd, right_spd), end='', flush=True)
+        inv = 'FULL' if has_cap else 'EMPTY'
+        cap_info = ('x=%.0f y=%.0f' % (cap['x'], cap['y'])) if cap else 'none'
+        print('\r%-16s [%s] cap=%-12s L=%+.2f R=%+.2f' % (
+            nav_state, inv, cap_info, left_spd, right_spd), end='', flush=True)
 
     except Exception as e:
         safe_stop()
