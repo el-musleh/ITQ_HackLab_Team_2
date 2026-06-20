@@ -29,7 +29,7 @@ git config user.name "Mohammad El Musleh"
 git config user.email "your-email@example.com"
 git add -A
 git commit -m "message"
-git push origin jetson-config
+git push origin $(git branch --show-current)
 # Password: use GitHub Personal Access Token
 ```
 
@@ -37,7 +37,7 @@ git push origin jetson-config
 
 ```bash
 git config credential.helper store
-git push origin jetson-config
+git push origin $(git branch --show-current)
 # Enter token once — saved forever
 ```
 

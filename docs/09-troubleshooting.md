@@ -50,15 +50,21 @@ systemctl status ssh
 
 ---
 
-## Issue: Camera Initialization Fails
+## Issue: Camera Initialization Fails or Shows Green Screen
 
-**Cause:** Camera was not properly released by a previous kernel session.
+**Causes:**
+1. **Host Daemon Lockup:** `nvargus-daemon` service on the Jetson host machine is locked up because a previous process did not release the camera resource properly.
+2. **Solid Green Screen:** The sensor is detected, but no pixel stream is received due to loose or tilted contacts on the camera ribbon cable.
+3. **Multi-Kernel Locking:** Another active Jupyter notebook kernel is holding the V4L2 device lock on `/dev/video0`.
 
-**Fix:** Restart the Jupyter kernel.
-
-```
-Right-click notebook tab → Shut Down Kernel → Close tab → Reopen notebook
-```
+**Fixes:**
+* **Host Reset (Crashes/Indefinite Hangs):** SSH into the Jetson Nano host shell and execute:
+  ```bash
+  sudo systemctl restart nvargus-daemon
+  ```
+* **Green Screen (Hardware Ribbon Cable):** Power off the board completely, check that the ribbon cable metal contacts face **inward** (towards the heatsink) and backing tape faces **outward**, then re-insert straight and lock the clamp.
+* **Release Locks (Multi-Kernel conflicts):** Jupyter Lab -> Running panel (circle icon in left sidebar) -> Shut Down All kernels except your active notebook.
+* **Diagnostics Details:** See [11-camera-and-hardware-diagnostics.md](file:///workspace/itq-bottle-cap-collector/docs/11-camera-and-hardware-diagnostics.md) and execute [camera_diagnostic_suite.ipynb](file:///workspace/itq-bottle-cap-collector/camera_diagnostic_suite.ipynb) for detailed hardware tests.
 
 ---
 

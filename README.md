@@ -30,37 +30,31 @@
 All code runs on the **NVIDIA Jetson Nano** via **WiFi + Jupyter Notebook**.
 
 ### 1. Connect to the Jetson
+```
+# No SSH needed — Jupyter is already running on the robot
+# 1. Connect laptop to WiFi: TP-LINK_744C (password: 15253354)
+# 2. Open browser: http://192.168.0.100:8888/lab
+# 3. Enter password: CIC@Tics1XAI
+```
+
+### 2. Open Jupyter Lab in Browser
+```
+# Jupyter is already running on the Jetson
+# Open on your laptop browser:
+http://192.168.0.100:8888/lab
+
+# Password: CIC@Tics1XAI
+```
+
+### 3. Clone the Project (First Time Only)
+In a Jupyter terminal (File → New → Terminal):
 ```bash
-# On your laptop: SSH into the Jetson Nano
-ssh jetson@<jetson-ip>
-# Default password is usually 'jetson' unless changed
-```
-
-### 2. Start Jupyter Notebook Server
-```bash
-# On the Jetson (via SSH)
-cd ~
-jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
-
-# You will see a URL with a token:
-# http://<jetson-ip>:8888/?token=abc123...
-```
-
-### 3. Open Jupyter in Your Laptop Browser
-```
-# Copy the full URL from the terminal and paste into your laptop browser
-http://<jetson-ip>:8888/?token=abc123...
-```
-
-### 4. Clone the Project (First Time Only)
-In a Jupyter terminal (New → Terminal):
-```bash
-cd ~
-git clone <repo-url> itq-bottle-cap-collector
+cd /workspace
+git clone https://github.com/el-musleh/ITQ_HackLab_Team_2.git itq-bottle-cap-collector
 cd itq-bottle-cap-collector
 ```
 
-### 5. Run the Calibration Notebook
+### 4. Run the Calibration Notebook
 ```
 In Jupyter:
 1. Navigate to itq-bottle-cap-collector/notebooks/
@@ -75,18 +69,17 @@ In Jupyter:
 This is how the team works during the hackathon:
 
 ### Step 1: Power On & Connect
-```bash
+```
 # 1. Turn on JETANK (battery switch)
 # 2. Wait 60 seconds for Jetson to boot
-# 3. SSH from laptop
-ssh jetson@192.168.1.100   # replace with actual IP
-
-# 4. Start Jupyter
-jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
+# 3. Connect laptop to WiFi: TP-LINK_744C
+# 4. Open Jupyter: http://192.168.0.100:8888/lab
+# 5. Password: CIC@Tics1XAI
 ```
 
 ### Step 2: Open Browser & Navigate
-- Open `http://<jetson-ip>:8888` on laptop
+- Open `http://192.168.0.100:8888/lab` on laptop
+- Enter password: `CIC@Tics1XAI`
 - Navigate to the project folder
 
 ### Step 3: Work in Notebooks
@@ -246,8 +239,8 @@ Camera Feed
 ### One-Command Setup (All Team Members)
 ```bash
 # 1. Clone the project
-git clone <repo-url>
-cd itq-bottle-cap-collector
+git clone https://github.com/el-musleh/ITQ_HackLab_Team_2.git
+cd ITQ_HackLab_Team_2
 
 # 2. Run the setup script (installs everything)
 ./setup.sh
@@ -288,7 +281,7 @@ pip install ultralytics
 - [ ] Ultrasonic / IR sensors reading distances
 - [ ] Bottle cap "collection" mapped to arm motion (grab + lift + drop)
 - [ ] Battery pack charged (spare recommended)
-- [ ] Laptop can reach Jetson at `http://<jetson-ip>:8888`
+- [ ] Laptop can reach Jetson at `http://192.168.0.100:8888/lab`
 
 ---
 
@@ -389,4 +382,4 @@ git push origin feature/perception-detector
 ---
 
 *Event:* AI & Robotics Hackathon Berlin — Team 2 — ITQ Track  
-*Last updated:* June 20, 2026 (Project kickoff)
+*Last updated:* June 20, 2026 (Hackathon Day — Active Development)

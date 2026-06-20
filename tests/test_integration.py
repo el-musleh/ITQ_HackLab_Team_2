@@ -41,7 +41,7 @@ def test_camera_perception_pipeline():
         # Try jetbot camera
         try:
             from jetbot import Camera
-            camera = Camera.instance(width=300, height=300)
+            camera = Camera.instance(width=320, height=240)
             time.sleep(0.5)
             frame = camera.value
         except Exception:
@@ -51,8 +51,8 @@ def test_camera_perception_pipeline():
         if frame is None:
             import cv2
             cap = cv2.VideoCapture(0)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 300)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 300)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
             ret, frame = cap.read()
             cap.release()
             if not ret:

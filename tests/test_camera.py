@@ -10,7 +10,7 @@ import time
 from tests.test_results import log
 
 
-def test_camera_init(width=300, height=300):
+def test_camera_init(width=320, height=240):
     """Try to create a camera instance."""
     camera = None
     try:
@@ -93,7 +93,7 @@ def test_camera_resolution(camera, expected_w, expected_h, source="jetbot"):
         log("Camera resolution", False, str(e))
 
 
-def run_all(width=300, height=300):
+def run_all(width=320, height=240):
     """Run all camera tests and return (camera_obj, source_type or None)."""
     print("--- Camera Tests ---")
     camera, source = test_camera_init(width, height)
