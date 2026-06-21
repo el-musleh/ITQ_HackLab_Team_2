@@ -135,6 +135,10 @@ class CameraController:
             print(f"Pan failed: {e}")
             return False
     
+    def get_pan(self):
+        """Return current pan angle in degrees."""
+        return self.pan_angle
+    
     def set_tilt(self, angle, speed=150):
         """
         Set tilt angle.

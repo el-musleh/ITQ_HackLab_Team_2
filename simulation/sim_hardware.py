@@ -459,6 +459,10 @@ class CameraController:
         angle = max(-90, min(90, angle))
         self.pan_angle = angle
         return True
+
+    def get_pan(self):
+        """Return current pan angle in degrees."""
+        return self.pan_angle
         
     def set_tilt(self, angle, speed=150):
         """

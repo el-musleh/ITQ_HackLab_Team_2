@@ -216,6 +216,28 @@ Camera Feed
 
 ---
 
+## 🧠 State Machine
+
+The robot's brain is a single reusable state machine in `control/state_machine.py` that runs on both the real robot and the simulator.
+
+Main flow:
+`IDLE → WANDERING → CHECK_FOR_BALL → COLLECT_BALL → CHECK_FOR_BALL → BALLS_LEFT → BLIND_SPOT → END`
+
+- `IDLE` initializes sensors and aborts on hard failures.
+- `WANDERING` sweeps the camera, registers balls into the world map, and calibrates the basket.
+- `CHECK_FOR_BALL` decides whether to collect a ball, check the map, or explore blind spots.
+- `COLLECT_BALL` tracks the ball, picks it up, returns to the basket, and deposits it.
+- `BALLS_LEFT` picks the nearest known ball from the map.
+- `BLIND_SPOT` visits candidate viewpoints to find hidden balls.
+- `END` returns to the starting corner and stops.
+- `RECOVERY` handles transient failures with retries.
+
+A dedicated safety supervisor overrides all states when a yellow boundary or obstacle is detected.
+
+See `docs/state-machine.md` for the full diagram and tuning parameters.
+
+---
+
 ## 🛠️ Setup
 
 ### Hardware: Waveshare JETANK
