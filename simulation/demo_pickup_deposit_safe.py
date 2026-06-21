@@ -1,5 +1,7 @@
 """
 Safe Pickup and Deposit Demo with Logging and Stability Checks
+
+Uses hardware-compatible API for seamless transition to real robot.
 """
 
 import sys
@@ -13,7 +15,7 @@ import logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from simulation.sim_core import SimulationCore
-from simulation.sim_hardware import create_sim_hardware
+from simulation import create_sim_hardware  # Hardware-compatible import
 from perception.ball_detector import BallDetector
 from perception.basket_detector import BasketDetector
 
@@ -212,9 +214,9 @@ def pickup_ball(arm, chassis, sim):
         logger.error(f"Robot unstable before pickup: {reason}")
         return False
     
-    # Step 1: Open claw
-    logger.info("Step 1: Opening claw...")
-    arm.open_claw()
+    # Step 1: Open gripper
+    logger.info("Step 1: Opening gripper...")
+    arm.gripper_open()
     for _ in range(30):
         sim.step()
     
@@ -223,9 +225,9 @@ def pickup_ball(arm, chassis, sim):
     if not safe_arm_move(arm, sim, [0, -35, -55, -25], duration=1.5):
         return False
     
-    # Step 3: Close claw to grip ball
-    logger.info("Step 3: Closing claw to grip ball...")
-    arm.close_claw()
+    # Step 3: Close gripper to grip ball
+    logger.info("Step 3: Closing gripper to grip ball...")
+    arm.gripper_close()
     for _ in range(60):
         sim.step()
     
@@ -234,7 +236,7 @@ def pickup_ball(arm, chassis, sim):
     if not safe_arm_move(arm, sim, [0, 15, 25, 50], duration=1.5):
         return False
     
-    logger.info("✓ Pickup complete! Ball secured in claw.")
+    logger.info("✓ Pickup complete! Ball secured in gripper.")
     return True
 
 
@@ -362,9 +364,9 @@ def deposit_ball(arm, chassis, sim):
     if not safe_arm_move(arm, sim, [0, 35, 35, 35], duration=1.5):
         return False
     
-    # Step 2: Open claw to drop ball
-    logger.info("Step 2: Opening claw to drop ball...")
-    arm.open_claw()
+    # Step 2: Open gripper to drop ball
+    logger.info("Step 2: Opening gripper to drop ball...")
+    arm.gripper_open()
     for _ in range(60):
         sim.step()
     

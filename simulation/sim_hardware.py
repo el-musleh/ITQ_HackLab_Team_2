@@ -1,6 +1,9 @@
 """
 Simulated Hardware Interfaces
 Drop-in replacements for hardware.chassis, hardware.arm, hardware.camera
+
+These classes have IDENTICAL APIs to the real hardware classes, allowing
+seamless switching between simulation and real robot with a single import change.
 """
 
 import pybullet as p
@@ -8,8 +11,8 @@ import numpy as np
 import cv2
 
 
-class SimChassis:
-    """Simulated chassis - mimics hardware.chassis.Chassis"""
+class ChassisController:
+    """Simulated chassis - mimics hardware.chassis.ChassisController"""
     
     def __init__(self, robot_id, max_speed=0.25):
         """
@@ -23,6 +26,10 @@ class SimChassis:
         self.max_speed = max_speed
         self.left_speed = 0.0
         self.right_speed = 0.0
+        
+        # Track current motor values (for get_motor_values())
+        self.left_value = 0.0
+        self.right_value = 0.0
         
         # Differential drive parameters (4-wheel skid-steer)
         self.wheel_base = 0.19  # Distance between tracks (19cm width)
@@ -39,6 +46,10 @@ class SimChassis:
         # Clamp speeds
         self.left_speed = np.clip(left, -self.max_speed, self.max_speed)
         self.right_speed = np.clip(right, -self.max_speed, self.max_speed)
+        
+        # Track current values
+        self.left_value = self.left_speed
+        self.right_value = self.right_speed
         
         # Apply velocity to robot base
         # Convert differential drive to linear and angular velocity
@@ -80,10 +91,14 @@ class SimChassis:
     def stop(self):
         """Stop all motors"""
         self.set_motors(0, 0)
+    
+    def get_motor_values(self):
+        """Get current motor values."""
+        return (self.left_value, self.right_value)
 
 
-class SimArm:
-    """Simulated 4-DOF arm - mimics hardware.arm.Arm"""
+class ArmController:
+    """Simulated 4-DOF arm - mimics hardware.arm.ArmController"""
     
     def __init__(self, robot_id, config=None):
         """
@@ -110,18 +125,23 @@ class SimArm:
             'claw': 10      # claw_joint (hook open/close)
         }
         
-        # Claw state
+        # Claw state (gripper in hardware terminology)
         self.claw_open_angle = 0.0      # 0° = open
         self.claw_closed_angle = -1.05  # -60° = closed (hook down)
         
         # Get poses from config
         poses = self.config.get('arm_poses', {})
-        self.poses = {
-            'home': poses.get('home', [0, 0, 0, 0]),
-            'pickup': poses.get('pickup', [0, -40, -60, 0]),
-            'carry': poses.get('carry', [0, 20, 30, 90]),
-            'deposit': poses.get('deposit', [0, 40, 40, 0])
-        }
+        self.pose_home = poses.get('home', [0, 0, 0, 0])
+        self.pose_pickup = poses.get('pickup', [0, -35, -55, -25])
+        self.pose_carry = poses.get('carry', [0, 15, 25, 50])
+        self.pose_deposit = poses.get('deposit', [0, 35, 35, 35])
+        
+        # Motion parameters (match hardware)
+        self.default_speed = 150  # Servo speed (not used in sim but kept for API)
+        self.slow_speed = 80      # Slow speed for precise movements
+        
+        # Current pose tracking
+        self.current_pose = self.pose_home.copy()
         
     def _degrees_to_radians(self, angles):
         """Convert list of angles from degrees to radians"""
@@ -148,78 +168,206 @@ class SimArm:
                 force=50
             )
             
-    def open_claw(self):
-        """Open the hook claw"""
-        p.setJointMotorControl2(
-            self.robot_id,
-            self.joint_indices['claw'],
-            p.POSITION_CONTROL,
-            targetPosition=self.claw_open_angle,
-            force=10
-        )
+    def gripper_open(self):
+        """Open gripper (hardware-compatible name)"""
+        try:
+            p.setJointMotorControl2(
+                self.robot_id,
+                self.joint_indices['claw'],
+                p.POSITION_CONTROL,
+                targetPosition=self.claw_open_angle,
+                force=10
+            )
+            return True
+        except Exception as e:
+            print(f"Gripper open failed: {e}")
+            return False
     
-    def close_claw(self):
-        """Close the hook claw to grip"""
-        p.setJointMotorControl2(
-            self.robot_id,
-            self.joint_indices['claw'],
-            p.POSITION_CONTROL,
-            targetPosition=self.claw_closed_angle,
-            force=10
-        )
+    def gripper_close(self):
+        """Close gripper to grip (hardware-compatible name)"""
+        try:
+            p.setJointMotorControl2(
+                self.robot_id,
+                self.joint_indices['claw'],
+                p.POSITION_CONTROL,
+                targetPosition=self.claw_closed_angle,
+                force=10
+            )
+            return True
+        except Exception as e:
+            print(f"Gripper close failed: {e}")
+            return False
             
-    def move_to_pose(self, pose_name):
-        """Move to predefined pose"""
-        if pose_name in self.poses:
-            self.set_joint_angles(self.poses[pose_name])
-        else:
-            print(f"[SimArm] Unknown pose: {pose_name}")
+    def move_to_pose(self, pose, speed=None):
+        """
+        Move arm to a predefined pose (hardware-compatible signature).
+        
+        Args:
+            pose: List of 4 angles [base, shoulder, elbow, wrist/gripper] in degrees
+            speed: Servo speed (ignored in simulation, kept for API compatibility)
             
+        Returns:
+            True if successful
+        """
+        if speed is None:
+            speed = self.default_speed
+        
+        try:
+            self.set_joint_angles(pose)
+            self.current_pose = list(pose)  # Track current pose
+            return True
+        except Exception as e:
+            print(f"Arm movement failed: {e}")
+            return False
+    
+    def home(self):
+        """Move to home position."""
+        return self.move_to_pose(self.pose_home)
+    
+    def move_base(self, angle, speed=None):
+        """Move base servo only."""
+        if speed is None:
+            speed = self.default_speed
+        
+        try:
+            radians = np.deg2rad(angle)
+            p.setJointMotorControl2(
+                self.robot_id,
+                self.joint_indices['base'],
+                p.POSITION_CONTROL,
+                targetPosition=radians,
+                force=50
+            )
+            self.current_pose[0] = angle
+            return True
+        except Exception as e:
+            print(f"Base movement failed: {e}")
+            return False
+    
+    def move_shoulder(self, angle, speed=None):
+        """Move shoulder servo only."""
+        if speed is None:
+            speed = self.default_speed
+        
+        try:
+            radians = np.deg2rad(angle)
+            p.setJointMotorControl2(
+                self.robot_id,
+                self.joint_indices['shoulder'],
+                p.POSITION_CONTROL,
+                targetPosition=radians,
+                force=50
+            )
+            self.current_pose[1] = angle
+            return True
+        except Exception as e:
+            print(f"Shoulder movement failed: {e}")
+            return False
+    
+    def move_elbow(self, angle, speed=None):
+        """Move elbow servo only."""
+        if speed is None:
+            speed = self.default_speed
+        
+        try:
+            radians = np.deg2rad(angle)
+            p.setJointMotorControl2(
+                self.robot_id,
+                self.joint_indices['elbow'],
+                p.POSITION_CONTROL,
+                targetPosition=radians,
+                force=50
+            )
+            self.current_pose[2] = angle
+            return True
+        except Exception as e:
+            print(f"Elbow movement failed: {e}")
+            return False
+    
+    def emergency_stop(self):
+        """Stop all arm movement (return to home)."""
+        return self.home()
+    
+    def get_current_pose(self):
+        """Get current arm pose."""
+        return self.current_pose.copy()
+    
     def pickup_sequence(self):
         """
-        Execute pickup sequence with hook claw:
-        1. Open claw
-        2. Lower arm close to ground
-        3. Close claw to grip ball
-        4. Lift ball from ground
+        Execute ball pickup sequence (hardware-compatible).
+        Note: In simulation, timing is handled by calling code with sim.step()
+        
+        Returns:
+            True if successful
         """
-        print("[SimArm] Executing pickup sequence")
-        # Note: Actual timing handled by calling code with sim.step()
+        print("Pickup sequence starting...")
+        return True
         
     def deposit_sequence(self):
         """
-        Execute deposit sequence:
-        1. Position arm over basket
-        2. Open claw to drop ball
-        3. Return to home
-        """
-        print("[SimArm] Executing deposit sequence")
-        # Note: Actual timing handled by calling code with sim.step()
+        Execute ball deposit sequence (hardware-compatible).
+        Note: In simulation, timing is handled by calling code with sim.step()
         
-    def home(self):
-        """Return to home position"""
-        self.move_to_pose('home')
-
-
-class SimCamera:
-    """Simulated camera - mimics hardware.camera.Camera"""
-    
-    def __init__(self, robot_id, width=320, height=240, fov=160):
+        Returns:
+            True if successful
         """
-        Initialize simulated camera
+        print("Deposit sequence starting...")
+        return True
+    
+    def calibrate_pickup_height(self, test_angles):
+        """
+        Calibration helper (no-op in simulation).
         
         Args:
-            robot_id: PyBullet robot body ID
-            width: Image width
-            height: Image height
-            fov: Field of view in degrees
+            test_angles: List of shoulder angles to test
+            
+        Returns:
+            None
         """
-        self.robot_id = robot_id
-        self.width = width
-        self.height = height
-        self.fov = fov
+        print("Calibration not needed in simulation")
+        return None
+
+
+class CameraController:
+    """Simulated camera - mimics hardware.camera.CameraController"""
+    
+    def __init__(self, config=None, robot_id=None):
+        """
+        Initialize simulated camera (hardware-compatible signature)
         
-        # Pan/tilt state (not implemented yet)
+        Args:
+            config: Optional configuration dict
+            robot_id: PyBullet robot body ID (simulation-specific)
+        """
+        # Camera parameters
+        if config and 'camera' in config:
+            cam_config = config['camera']
+            self.width = cam_config.get('width', 320)
+            self.height = cam_config.get('height', 240)
+            self.fps = cam_config.get('fps', 30)
+        else:
+            self.width = 320
+            self.height = 240
+            self.fps = 30
+        
+        # Pan/tilt servo IDs (for API compatibility)
+        if config and 'servos' in config:
+            servo_config = config['servos']
+            self.pan_id = servo_config.get('pan', 1)
+            self.tilt_id = servo_config.get('tilt', 5)
+        else:
+            self.pan_id = 1
+            self.tilt_id = 5
+        
+        # Simulation-specific
+        self.robot_id = robot_id
+        self.fov = 160
+        
+        # Camera instance (simulated)
+        self.camera = None
+        self.camera_source = 'pybullet'
+        
+        # Current pan/tilt angles
         self.pan_angle = 0
         self.tilt_angle = 0
         
@@ -282,26 +430,70 @@ class SimCamera:
         
         return bgr
         
-    def set_pan(self, angle):
-        """Set camera pan angle (degrees)"""
-        self.pan_angle = angle
+    def initialize(self):
+        """
+        Initialize camera (hardware-compatible method).
+        In simulation, camera is always ready.
         
-    def set_tilt(self, angle):
-        """Set camera tilt angle (degrees)"""
+        Returns:
+            True if successful
+        """
+        print(f"✓ PyBullet Camera initialized ({self.width}x{self.height})")
+        return True
+    
+    def release(self):
+        """Release camera resources (no-op in simulation)."""
+        pass
+    
+    def set_pan(self, angle, speed=150):
+        """
+        Set pan angle (hardware-compatible signature).
+        
+        Args:
+            angle: Pan angle in degrees (-90 to +90)
+            speed: Servo speed (ignored in simulation)
+            
+        Returns:
+            True if successful
+        """
+        angle = max(-90, min(90, angle))
+        self.pan_angle = angle
+        return True
+        
+    def set_tilt(self, angle, speed=150):
+        """
+        Set tilt angle (hardware-compatible signature).
+        
+        Args:
+            angle: Tilt angle in degrees (-60 to +60)
+            speed: Servo speed (ignored in simulation)
+            
+        Returns:
+            True if successful
+        """
+        angle = max(-60, min(60, angle))
         self.tilt_angle = angle
+        return True
         
     def center(self):
-        """Center camera"""
-        self.pan_angle = 0
-        self.tilt_angle = 0
+        """Center pan/tilt servos."""
+        self.set_pan(0)
+        self.set_tilt(0)
+        return True
         
     def look_down(self):
-        """Look down at ground"""
-        self.tilt_angle = 30
+        """Tilt camera down for ground view."""
+        self.set_tilt(-30)
+        return True
         
     def look_forward(self):
-        """Look forward"""
-        self.tilt_angle = 0
+        """Tilt camera forward for horizon view."""
+        self.set_tilt(0)
+        return True
+    
+    def get_frame_size(self):
+        """Get frame dimensions."""
+        return (self.width, self.height)
 
 
 def create_sim_hardware(robot_id, config):
@@ -315,8 +507,8 @@ def create_sim_hardware(robot_id, config):
     Returns:
         (chassis, arm, camera) tuple
     """
-    chassis = SimChassis(robot_id, max_speed=config.get('motors', {}).get('max_speed', 0.25))
-    arm = SimArm(robot_id, config)
-    camera = SimCamera(robot_id, width=320, height=240, fov=160)
+    chassis = ChassisController(robot_id, max_speed=config.get('motors', {}).get('max_speed', 0.25))
+    arm = ArmController(robot_id, config)
+    camera = CameraController(config, robot_id=robot_id)
     
     return chassis, arm, camera

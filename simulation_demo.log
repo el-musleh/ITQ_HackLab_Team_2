@@ -293,3 +293,24 @@
 2026-06-21 04:54:24,704 [WARNING] Lost sight of ball
 2026-06-21 04:54:24,704 [ERROR] Failed to approach ball!
 2026-06-21 04:54:24,717 [INFO] Demo ended
+2026-06-21 04:58:40,711 [INFO] ============================================================
+2026-06-21 04:58:40,711 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:58:40,711 [INFO] ============================================================
+2026-06-21 04:58:40,717 [INFO] Initializing simulation...
+2026-06-21 04:58:41,863 [INFO] Initialization complete
+2026-06-21 04:58:41,863 [INFO] Letting robot settle...
+2026-06-21 04:58:42,393 [INFO] Robot stable, starting demo...
+2026-06-21 04:58:42,393 [INFO] 
+============================================================
+2026-06-21 04:58:42,393 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:58:42,393 [INFO] ============================================================
+2026-06-21 04:58:42,393 [INFO] Searching for balls...
+2026-06-21 04:58:42,428 [INFO] Found silver ball at distance 7.1cm
+2026-06-21 04:58:42,429 [INFO] 
+============================================================
+2026-06-21 04:58:42,429 [INFO] STATE: APPROACHING SILVER BALL
+2026-06-21 04:58:42,429 [INFO] ============================================================
+2026-06-21 04:58:42,429 [INFO] Approaching silver ball...
+2026-06-21 04:58:48,471 [WARNING] Lost sight of ball
+2026-06-21 04:58:48,472 [ERROR] Failed to approach ball!
+2026-06-21 04:58:48,487 [INFO] Demo ended
