@@ -111,11 +111,11 @@ echo ""
 # ========================================
 echo -e "${YELLOW}[4/6] Installing SCSCtrl servo library...${NC}"
 
-if [ -d "SCSCtrl" ]; then
+if [ -d "src/SCSCtrl" ]; then
     pip install -e . || pip install .
     echo -e "${GREEN}SCSCtrl installed from local source.${NC}"
 else
-    echo -e "${RED}SCSCtrl folder not found! Cloning from GitHub...${NC}"
+    echo -e "${RED}src/SCSCtrl folder not found! Cloning from GitHub...${NC}"
     git clone https://github.com/waveshare/JETANK.git /tmp/JETANK
     cd /tmp/JETANK
     pip install -e . || pip install .
@@ -130,22 +130,23 @@ echo ""
 echo -e "${YELLOW}[5/6] Creating project directories...${NC}"
 
 mkdir -p \
-    perception \
-    control \
-    hardware \
-    utils \
-    robot_tests \
+    src/perception \
+    src/control \
+    src/hardware \
+    src/utils \
+    tests \
     notebooks \
     logs
 
 touch \
-    perception/__init__.py \
-    control/__init__.py \
-    hardware/__init__.py \
-    utils/__init__.py
+    src/__init__.py \
+    src/perception/__init__.py \
+    src/control/__init__.py \
+    src/hardware/__init__.py \
+    src/utils/__init__.py
 
 # Create starter files if they don't exist
-[ ! -f "main.py" ] && cat > main.py << 'PYEOF'
+[ ! -f "src/main.py" ] && cat > src/main.py << 'PYEOF'
 #!/usr/bin/env python3
 """Entry point for ITQ Bottle Cap Collector.
 
@@ -154,10 +155,10 @@ Run on NVIDIA Jetson Nano via Jupyter or command line.
 
 import sys
 import time
-from perception.detector import CapDetector
-from hardware.chassis import Chassis
-from hardware.arm import Arm
-from control.state_machine import StateMachine
+from src.perception.detector import CapDetector
+from src.hardware.chassis import Chassis
+from src.hardware.arm import Arm
+from src.control.state_machine import StateMachine
 
 def main():
     print("=" * 50)
@@ -283,8 +284,8 @@ if [ "$IS_JETSON" = true ]; then
 else
     echo -e "${GREEN}Next steps on dev machine:${NC}"
     echo "  1. Activate venv:  source venv/bin/activate"
-    echo "  2. Edit code in:     perception/, control/, hardware/"
-    echo "  3. Test modules:     python3 -m pytest robot_tests/"
+    echo "  2. Edit code in:     src/"
+    echo "  3. Test modules:     python3 -m pytest tests/"
     echo "  4. When ready, push: git push origin elmusleh"
     echo ""
     echo "  (This is a dev environment — robot hardware only works on the Jetson Nano)"

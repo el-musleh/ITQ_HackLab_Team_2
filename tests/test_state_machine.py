@@ -2,7 +2,7 @@
 
 import pytest
 import time
-from control.state_machine import (
+from src.control.state_machine import (
     IDLE, WANDERING, CHECK_FOR_BALL, COLLECT_BALL, BALLS_LEFT,
     BLIND_SPOT, END, RECOVERY,
     CS_APPROACH, CS_PICKUP, CS_GOTO_BASKET, CS_DEPOSIT

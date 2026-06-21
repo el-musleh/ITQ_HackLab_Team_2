@@ -132,7 +132,7 @@ jupyter nbconvert --to script notebooks/05_detection_demo.ipynb
 # Creates: notebooks/05_detection_demo.py
 
 # Then move the function into the real module
-mv notebooks/05_detection_demo.py perception/detector.py
+mv notebooks/05_detection_demo.py src/perception/detector.py
 ```
 
 Or manually: copy the working cell into the `.py` file in the right package folder.
@@ -159,39 +159,48 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 ├── README.md                    # This file
 ├── setup.sh                     # One-command setup for all team members
 ├── requirements.txt             # Python dependencies
-├── main.py                      # Entry point — state machine orchestrator
 ├── config.yaml                  # Camera thresholds, PID gains, course params
+├── pytest.ini                   # Test configuration
 │
-├── perception/                  # 🎥 Computer vision module
-│   ├── __init__.py
-│   ├── camera.py               # Camera capture & calibration
-│   ├── detector.py             # Bottle cap detection (HSV blob + YOLO fallback)
-│   ├── obstacle_detector.py    # Obstacle / wall detection
-│   └── calibrate.py            # On-site color/light calibration tool
+├── src/                         # 🐍 All Python source code
+│   ├── main.py                  # Entry point — state machine orchestrator
+│   │
+│   ├── perception/              # 🎥 Computer vision module
+│   │   ├── __init__.py
+│   │   ├── camera.py            # Camera capture & calibration
+│   │   ├── detector.py          # Bottle cap detection (HSV blob + YOLO fallback)
+│   │   ├── obstacle_detector.py # Obstacle / wall detection
+│   │   └── calibrate.py         # On-site color/light calibration tool
+│   │
+│   ├── control/                 # 🎮 Movement & navigation module
+│   │   ├── __init__.py
+│   │   ├── state_machine.py     # SEARCH → APPROACH → COLLECT → RETURN
+│   │   ├── pid.py               # PID controller for line following
+│   │   ├── navigator.py         # Waypoint & path management
+│   │   └── recovery.py          # Stuck-detection & escape behaviors
+│   │
+│   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
+│   │   ├── __init__.py
+│   │   ├── chassis.py           # Tracked motor control via SCSCtrl
+│   │   ├── arm.py               # 4-DOF arm servo control
+│   │   ├── camera.py            # CSI camera on Jetson Nano
+│   │   └── sensors.py           # Ultrasonic / IR sensors
+│   │
+│   └── utils/                   # 🔧 Utilities
+│       ├── __init__.py
+│       ├── telemetry.py         # Logging: caps seen, collected, collisions, time
+│       └── visualizer.py        # Debug overlay for camera feed
 │
-├── control/                     # 🎮 Movement & navigation module
-│   ├── __init__.py
-│   ├── state_machine.py        # SEARCH → APPROACH → COLLECT → RETURN
-│   ├── pid.py                  # PID controller for line following
-│   ├── navigator.py            # Waypoint & path management
-│   └── recovery.py             # Stuck-detection & escape behaviors
+├── notebooks/                   # 📓 Jupyter notebooks
+│   └── ...
 │
-├── hardware/                    # 🔧 Robot interface (JETANK / Jetson Nano)
-│   ├── __init__.py
-│   ├── chassis.py              # Tracked motor control via SCSCtrl
-│   ├── arm.py                  # 4-DOF arm servo control
-│   ├── camera.py               # CSI camera on Jetson Nano
-│   └── sensors.py              # Ultrasonic / IR sensors
+├── tests/                       # ✅ Validation scripts
+│   ├── test_camera.py
+│   ├── test_detection.py
+│   └── test_pid.py
 │
-├── utils/                       # 🔧 Utilities
-│   ├── __init__.py
-│   ├── telemetry.py            # Logging: caps seen, collected, collisions, time
-│   └── visualizer.py           # Debug overlay for camera feed
-│
-└── robot_tests/                       # ✅ Validation scripts
-    ├── test_camera.py
-    ├── test_detection.py
-    └── test_pid.py
+└── docs/                        # 📄 Documentation
+    └── ...
 ```
 
 ---
@@ -218,7 +227,7 @@ Camera Feed
 
 ## 🧠 State Machine
 
-The robot's brain is a single reusable state machine in `control/state_machine.py` that runs on both the real robot and the simulator.
+The robot's brain is a single reusable state machine in `src/control/state_machine.py` that runs on both the real robot and the simulator.
 
 Main flow:
 `IDLE → WANDERING → CHECK_FOR_BALL → COLLECT_BALL → CHECK_FOR_BALL → BALLS_LEFT → BLIND_SPOT → END`
@@ -280,7 +289,7 @@ jupyter notebook --ip=0.0.0.0 --port=8888
 3. Installs Python packages (OpenCV, NumPy, PySerial, Ultralytics, Jupyter)
 4. Installs the `SCSCtrl` servo library from local source
 5. Creates the project directory structure
-6. Generates starter files (`main.py`, `config.yaml`)
+6. Generates starter files (`src/main.py`, `config.yaml`)
 7. Verifies all installations
 
 ### Manual Dependencies (if setup.sh fails)
@@ -311,12 +320,12 @@ pip install ultralytics
 
 | Name | Role | Module | Status |
 |------|------|--------|--------|
-| **Yashveer Sookun** | Vision Lead | `perception/` | 🔴 Not started |
-| **Salawu Wareeth** | Pipeline / Logging | `utils/telemetry.py` | 🔴 Not started |
-| **Mohammed Abubakr Khan** | Integration / QA | `robot_tests/` | 🔴 Not started |
-| **Joaquín Morillo Soto** | Hardware / Mechanics | `hardware/` | 🔴 Not started |
-| **Mohammad El Musleh** | Control Lead | `control/` + Jetson setup | 🔴 Not started |
-| **Myron Sydorov** | Navigation / Recovery | `control/recovery.py` | 🔴 Not started |
+| **Yashveer Sookun** | Vision Lead | `src/perception/` | 🔴 Not started |
+| **Salawu Wareeth** | Pipeline / Logging | `src/utils/telemetry.py` | 🔴 Not started |
+| **Mohammed Abubakr Khan** | Integration / QA | `tests/` | 🔴 Not started |
+| **Joaquín Morillo Soto** | Hardware / Mechanics | `src/hardware/` | 🔴 Not started |
+| **Mohammad El Musleh** | Control Lead | `src/control/` + Jetson setup | 🔴 Not started |
+| **Myron Sydorov** | Navigation / Recovery | `src/control/recovery.py` | 🔴 Not started |
 
 **Workflow:** Each person owns their module. Open a PR when ready. Pair-review before merging.
 
@@ -325,14 +334,14 @@ pip install ultralytics
 ## ✅ TODO / Progress
 
 ### Phase 1: Perception (Hour 0–2)
-- [ ] Camera calibration script (`perception/calibrate.py`)
+- [ ] Camera calibration script (`src/perception/calibrate.py`)
 - [ ] HSV-based bottle cap detector
 - [ ] Multi-frame validation filter
 - [ ] Obstacle detection (reuse cap pipeline or dedicated sensor)
 
 ### Phase 2: Control (Hour 2–4)
-- [ ] State machine implementation (`control/state_machine.py`)
-- [ ] PID controller for line following (`control/pid.py`)
+- [ ] State machine implementation (`src/control/state_machine.py`)
+- [ ] PID controller for line following (`src/control/pid.py`)
 - [ ] Recovery behavior (stuck detection + escape)
 - [ ] Integrate perception → control bridge
 

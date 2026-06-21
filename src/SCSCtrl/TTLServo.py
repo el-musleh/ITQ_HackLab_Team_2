@@ -12,11 +12,11 @@ servoDirection = [1,-1]
 servoInputRange = 850
 servoAngleRange = 180
 
-servoInit = [None, 512, 512, 512, 512, 512]
+servoInit = [None, 512, 512, 512, 512, 512, 512]
 
-nowPos = [None, 512, 512, 512, 512, 512]
-nextPos = [None, 512, 512, 512, 512, 512]
-speedBuffer = [None, 512, 512, 512, 512, 512]
+nowPos = [None, 512, 512, 512, 512, 512, 512]
+nextPos = [None, 512, 512, 512, 512, 512, 512]
+speedBuffer = [None, 512, 512, 512, 512, 512, 512]
 
 xMax = 150
 xMin = 90
@@ -42,7 +42,9 @@ else:
             pass
         return ch
 
-from src.SCSCtrl.scservo_sdk import *  
+# from scservo_sdk import *                    # Uses SCServo SDK library
+# from jetbot.scservo_sdk import *  
+from src.SCSCtrl.scservo_sdk import *
 
 # Control table address
 ADDR_SCS_TORQUE_ENABLE     = 40
@@ -96,7 +98,6 @@ if portHandler.openPort():
 else:
     print("Failed to open the port")
     print("Continuing in mock/headless mode without physical serial connection.")
-
 
 
 def syncCtrl(ID_List, Speed_List, Goal_List):
@@ -387,19 +388,12 @@ def stopServo(servoNumInput):
 
 
 if __name__ == "__main__":
-    while 1:
-        servoAngleCtrl(1, 0, 1, 150)
-        time.sleep(0.1)
-        servoAngleCtrl(2, 0, 1, 150)
-        time.sleep(0.1)
-        servoAngleCtrl(3, 0, 1, 150)
-        time.sleep(0.1)
-        servoAngleCtrl(4, 0, 1, 150)
-        time.sleep(0.1)
-        servoAngleCtrl(5, 0, 1, 150)
-        time.sleep(0.1)
-
-        time.sleep(2)
+    xyInputSmooth(150, 170, 2)
+    time.sleep(2)
+    xyInputSmooth(150, -170, 2)
+    xyInputSmooth(150, 50, 2)
+    time.sleep(2)
+    xyInputSmooth(150, 0, 2)
 
 
     # timeChange = 1.5
