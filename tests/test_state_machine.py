@@ -91,6 +91,10 @@ class TestStateTransitions:
         # Simulate ball detection
         ball = simulate_ball_detection('silver', 160, 120, 50, 500)
         mocks['ball_detector'].set_test_balls([ball])
+        # Set pose so ball estimate lands inside arena bounds
+        mocks['pose'][0] = 0.5
+        mocks['pose'][1] = 0.5
+        mocks['pose'][2] = 0.0
         
         # Run a few ticks
         run_n_ticks(sm, 10)
@@ -430,6 +434,79 @@ class TestGotoBasketHybrid:
         assert by is not None
         assert abs(bx - 1.0) < 0.05
         assert abs(by - 0.5) < 0.05
+
+
+class TestOutOfBoundsBallHandling:
+    """Test handling of balls detected outside arena bounds."""
+
+    def test_out_of_bounds_ball_with_boundary_skipped(self):
+        """Ball outside arena + boundary visible → skip, go to BALLS_LEFT."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        # Ball detected visually but position will be outside arena
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 50, 500),
+        ])
+        # Pose at corner, ball estimate will land outside arena
+        mocks['pose'][0] = 0.01
+        mocks['pose'][1] = 0.01
+        mocks['pose'][2] = 3.14  # Facing backward (away from arena)
+
+        # Boundary tape visible (confirming ball is outside)
+        mocks['obstacle_detector'].test_boundary = True
+
+        result = sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert result != COLLECT_BALL
+        assert result in (BALLS_LEFT, BLIND_SPOT, END)
+
+    def test_out_of_bounds_ball_without_boundary_skipped(self):
+        """Ball outside arena + no boundary visible → skip, go to BALLS_LEFT."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 50, 500),
+        ])
+        mocks['pose'][0] = 0.01
+        mocks['pose'][1] = 0.01
+        mocks['pose'][2] = 3.14
+
+        # Boundary not visible
+        mocks['obstacle_detector'].test_boundary = False
+
+        result = sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert result != COLLECT_BALL
+        assert result in (BALLS_LEFT, BLIND_SPOT, END)
+
+    def test_in_bounds_ball_still_collected(self):
+        """Normal ball inside arena → COLLECT_BALL (regression test)."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        # Ball at center of arena
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 30, 500),
+        ])
+        mocks['pose'][0] = 0.9
+        mocks['pose'][1] = 0.875
+        mocks['pose'][2] = 0.0
+
+        result = sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert result == COLLECT_BALL
+        assert sm.current_ball is not None
 
 
 # Run tests if executed directly

@@ -443,14 +443,23 @@ class StateMachine:
         balls = self.ball_detector.detect(frame)
         if balls:
             balls_sorted = sorted(balls, key=lambda b: b[2])
-            ball = balls_sorted[0]
-            world_id = None
-            if pose is not None:
-                pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
-                world_id = self.world_map.register_ball_from_detection(
-                    ball, pose, camera_pan_deg=pan)
-            self.current_ball = self._ball_to_dict(ball, world_id=world_id)
-            return COLLECT_BALL
+            for ball in balls_sorted:
+                world_id = None
+                if pose is not None:
+                    pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
+                    world_id = self.world_map.register_ball_from_detection(
+                        ball, pose, camera_pan_deg=pan)
+                if world_id is not None:
+                    self.current_ball = self._ball_to_dict(ball, world_id=world_id)
+                    return COLLECT_BALL
+                # Ball estimated outside arena — check if boundary confirms it
+                boundary_detected, _, _ = self.obstacle_detector.detect_boundary(frame)
+                if boundary_detected:
+                    self._log('Ball outside arena (boundary confirmed) — skipping')
+                else:
+                    self._log('Ball position outside bounds but boundary not visible — skipping')
+                # Try next ball
+            # No valid balls found in this frame
         if self.world_map.has_known_balls():
             return BALLS_LEFT
         if self.world_map.has_blind_spots():

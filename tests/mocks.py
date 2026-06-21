@@ -194,6 +194,12 @@ class MockObstacleDetector:
         self.test_boundary = False
         self.test_obstacle = False
         
+    def detect_boundary(self, frame):
+        """Detect yellow boundary tape."""
+        if self.test_boundary:
+            return True, 'reverse', 2000
+        return False, 'none', 0
+
     def detect_combined(self, frame):
         """Detect obstacles and boundaries."""
         return {
@@ -226,6 +232,10 @@ class MockWorldMap:
         
     def register_ball(self, x, y, source='camera', confidence=1.0, color=None):
         """Register a ball."""
+        b = self.arena_bounds
+        if not (b['x_min'] + 0.05 <= x <= b['x_max'] - 0.05 and
+                b['y_min'] + 0.05 <= y <= b['y_max'] - 0.05):
+            return None
         ball_id = len(self.balls)
         ball = {
             'id': ball_id,
