@@ -283,18 +283,18 @@ arm_poses = {
 
 ## Files Modified
 
-1. **`simulation/models/jetank.urdf`**
+1. **`src/simulation/models/jetank.urdf`**
    - Added gripper_base link
    - Added hook_claw link with revolute joint
    - Configured joint limits (0° to -60°)
 
-2. **`simulation/sim_hardware.py`**
+2. **`src/simulation/sim_hardware.py`**
    - Updated joint indices (added claw: 10)
    - Added `open_claw()` method
    - Added `close_claw()` method
    - Updated claw state tracking
 
-3. **`simulation/demo_pickup_deposit_safe.py`**
+3. **`src/simulation/demo_pickup_deposit_safe.py`**
    - Updated `pickup_ball()` with 4-step sequence
    - Updated `deposit_ball()` with 3-step sequence
    - Added detailed logging for each step
@@ -346,5 +346,5 @@ The **hook-style claw gripper** is now fully functional:
 **Run the demo**:
 ```bash
 source venv/bin/activate
-python simulation/demo_pickup_deposit_safe.py
+python src/simulation/demo_pickup_deposit_safe.py
 ```

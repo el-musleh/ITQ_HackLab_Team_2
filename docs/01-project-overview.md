@@ -37,9 +37,9 @@ SEARCH ──(sees cap)──> APPROACH ──(close enough)──> COLLECT ─�
 
 | Name | Role | Module |
 |------|------|--------|
-| **Yashveer Sookun** | Vision Lead | `perception/` |
-| **Salawu Wareeth** | Pipeline / Logging | `utils/telemetry.py` |
+| **Yashveer Sookun** | Vision Lead | `src/perception/` |
+| **Salawu Wareeth** | Pipeline / Logging | `src/utils/telemetry.py` |
 | **Mohammed Abubakr Khan** | Integration / QA | `robot_tests/` |
-| **Joaquín Morillo Soto** | Hardware / Mechanics | `hardware/` |
-| **Mohammad El Musleh** | Control Lead | `control/` + Jetson setup |
-| **Myron Sydorov** | Navigation / Recovery | `control/recovery.py` |
+| **Joaquín Morillo Soto** | Hardware / Mechanics | `src/hardware/` |
+| **Mohammad El Musleh** | Control Lead | `src/control/` + Jetson setup |
+| **Myron Sydorov** | Navigation / Recovery | `src/control/recovery.py` |

@@ -52,7 +52,7 @@
 1. Open: notebooks/03_test_arm.ipynb (if exists)
    OR run in terminal:
    
-from hardware.arm import ArmController
+from src.hardware.arm import ArmController
 import yaml
 
 with open('config.yaml') as f:
@@ -155,7 +155,7 @@ from jetbot import Robot
 robot = Robot()
 robot.stop()
 
-from hardware.arm import ArmController
+from src.hardware.arm import ArmController
 arm = ArmController()
 arm.home()
 ```

@@ -41,7 +41,7 @@ Balls at positive coords (0.2 to 1.6, 0.2 to 1.5) ✅
 
 ### 1. Arena URDF Structure
 
-**File**: `simulation/models/arena.urdf`
+**File**: `src/simulation/models/arena.urdf`
 
 Added a world link and shifted the ground plane:
 
@@ -81,7 +81,7 @@ Added a world link and shifted the ground plane:
 
 ### 3. Ball Spawn Positions
 
-**File**: `simulation/sim_core.py`
+**File**: `src/simulation/sim_core.py`
 
 **Before**:
 ```python
@@ -178,12 +178,12 @@ This means:
 
 ## Files Modified
 
-1. ✅ `simulation/models/arena.urdf`
+1. ✅ `src/simulation/models/arena.urdf`
    - Added world link
    - Added ground_joint with offset
    - Updated basket position to (0, 0) in ground frame
 
-2. ✅ `simulation/sim_core.py`
+2. ✅ `src/simulation/sim_core.py`
    - Updated ball spawn range to positive coordinates
    - Updated basket avoidance center to (0.9, 0.875)
 
@@ -230,5 +230,5 @@ The arena layout now matches the requirement exactly!
 **Run the demo**:
 ```bash
 source venv/bin/activate
-python simulation/demo_pickup_deposit_safe.py
+python src/simulation/demo_pickup_deposit_safe.py
 ```

@@ -68,7 +68,7 @@
 
 ## Files Updated
 
-### 1. `simulation/models/jetank.urdf`
+### 1. `src/simulation/models/jetank.urdf`
 
 **Changes**:
 - ✅ Updated chassis dimensions (17×19×25 cm)
@@ -93,7 +93,7 @@ base_link (chassis)
                 └── gripper (fixed end effector)
 ```
 
-### 2. `simulation/sim_hardware.py`
+### 2. `src/simulation/sim_hardware.py`
 
 **Changes**:
 - ✅ Updated wheel base to 0.19m (19cm)
@@ -167,7 +167,7 @@ arm_poses:
 Running `test_basic_motion.py` with updated model:
 
 ```bash
-./venv/bin/python simulation/test_basic_motion.py
+./venv/bin/python src/simulation/test_basic_motion.py
 ```
 
 **Expected**:

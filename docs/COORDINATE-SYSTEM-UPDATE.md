@@ -15,7 +15,7 @@
 
 **Solution**: Move the rotation command inside the while loop so it's executed every iteration.
 
-**File**: `simulation/demo_pickup_deposit_safe.py`
+**File**: `src/simulation/demo_pickup_deposit_safe.py`
 
 **Changes**:
 ```python
@@ -65,7 +65,7 @@ def find_basket(chassis, camera, basket_detector, sim, max_duration=20.0):
 
 ### 3. Files Modified
 
-#### `simulation/sim_core.py`
+#### `src/simulation/sim_core.py`
 **Change**: Default robot spawn position
 ```python
 # Before
@@ -89,7 +89,7 @@ basket_x, basket_y = -0.9, -0.875
 while np.sqrt((x - basket_x)**2 + (y - basket_y)**2) < 0.25:  # Avoid basket
 ```
 
-#### `simulation/models/arena.urdf`
+#### `src/simulation/models/arena.urdf`
 **Change**: Basket position
 ```xml
 <!-- Before -->
@@ -100,7 +100,7 @@ while np.sqrt((x - basket_x)**2 + (y - basket_y)**2) < 0.25:  # Avoid basket
 <origin xyz="-0.9 -0.875 0.06" rpy="0 0 0"/>
 ```
 
-#### `simulation/demo_pickup_deposit_safe.py`
+#### `src/simulation/demo_pickup_deposit_safe.py`
 **Change**: Robot spawn position
 ```python
 # Before
@@ -206,7 +206,7 @@ Coordinate System:
 
 ```bash
 source venv/bin/activate
-python simulation/demo_pickup_deposit_safe.py
+python src/simulation/demo_pickup_deposit_safe.py
 ```
 
 **Expected Behavior**:

@@ -11,11 +11,11 @@
 USE_SIMULATION = True  # False for hardware
 
 if USE_SIMULATION:
-    from simulation import ChassisController, ArmController, CameraController
+    from src.simulation import ChassisController, ArmController, CameraController
 else:
-    from hardware.chassis import ChassisController
-    from hardware.arm import ArmController
-    from hardware.camera import CameraController
+    from src.hardware.chassis import ChassisController
+    from src.hardware.arm import ArmController
+    from src.hardware.camera import CameraController
 
 # REST IS IDENTICAL!
 ```

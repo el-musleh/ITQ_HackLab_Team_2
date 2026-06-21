@@ -46,9 +46,9 @@ Successfully refactored simulation code to be a **perfect drop-in replacement** 
 - ✅ Added camera source tracking
 
 ### Phase 5: Unified Import Module ✅
-- ✅ Created `simulation/__init__.py`
+- ✅ Created `src/simulation/__init__.py`
 - ✅ Exports `ChassisController`, `ArmController`, `CameraController`
-- ✅ Single-line import: `from simulation import ChassisController, ...`
+- ✅ Single-line import: `from src.simulation import ChassisController, ...`
 
 ### Phase 6: Demo Updates ✅
 - ✅ Updated `demo_pickup_deposit_safe.py` to use new API
@@ -72,7 +72,7 @@ Successfully refactored simulation code to be a **perfect drop-in replacement** 
 ## Test Results
 
 ```bash
-$ ./venv/bin/python simulation/demo_pickup_deposit_safe.py
+$ ./venv/bin/python src/simulation/demo_pickup_deposit_safe.py
 
 ✓ Robot stable, starting demo...
 ✓ Found silver ball at distance 7.1cm
@@ -94,7 +94,7 @@ $ ./venv/bin/python simulation/demo_pickup_deposit_safe.py
 ### Before (Simulation-Specific)
 
 ```python
-from simulation.sim_hardware import SimChassis, SimArm, SimCamera
+from src.simulation.sim_hardware import SimChassis, SimArm, SimCamera
 
 chassis = SimChassis(robot_id)
 arm = SimArm(robot_id, config)
@@ -106,7 +106,7 @@ arm.open_claw()  # Simulation-specific name
 ### After (Hardware-Compatible)
 
 ```python
-from simulation import ChassisController, ArmController, CameraController
+from src.simulation import ChassisController, ArmController, CameraController
 
 chassis = ChassisController(robot_id)
 arm = ArmController(robot_id, config)
@@ -118,9 +118,9 @@ arm.gripper_open()  # Hardware-compatible name
 ### On Real Hardware (Identical!)
 
 ```python
-from hardware.chassis import ChassisController
-from hardware.arm import ArmController
-from hardware.camera import CameraController
+from src.hardware.chassis import ChassisController
+from src.hardware.arm import ArmController
+from src.hardware.camera import CameraController
 
 chassis = ChassisController(robot)
 arm = ArmController(config)
@@ -139,11 +139,11 @@ arm.gripper_open()  # Same method!
 USE_SIMULATION = True  # Change to False for hardware
 
 if USE_SIMULATION:
-    from simulation import ChassisController, ArmController, CameraController
+    from src.simulation import ChassisController, ArmController, CameraController
 else:
-    from hardware.chassis import ChassisController
-    from hardware.arm import ArmController
-    from hardware.camera import CameraController
+    from src.hardware.chassis import ChassisController
+    from src.hardware.arm import ArmController
+    from src.hardware.camera import CameraController
 
 # Rest of code is IDENTICAL!
 ```
@@ -162,10 +162,10 @@ ROBOT_MODE=HARDWARE python my_script.py
 import os
 
 if os.getenv('ROBOT_MODE') == 'HARDWARE':
-    from hardware.chassis import ChassisController
+    from src.hardware.chassis import ChassisController
     # ... hardware imports
 else:
-    from simulation import ChassisController
+    from src.simulation import ChassisController
     # ... simulation imports
 ```
 
@@ -174,14 +174,14 @@ else:
 ## Files Created/Modified
 
 ### Created
-1. `simulation/__init__.py` - Unified import module
+1. `src/simulation/__init__.py` - Unified import module
 2. `HARDWARE-API-COMPATIBILITY.md` - Comprehensive documentation
 3. `example_hardware_switch.py` - Demo script
 4. `IMPLEMENTATION-COMPLETE.md` - This file
 
 ### Modified
-1. `simulation/sim_hardware.py` - Complete API alignment
-2. `simulation/demo_pickup_deposit_safe.py` - Updated to use new API
+1. `src/simulation/sim_hardware.py` - Complete API alignment
+2. `src/simulation/demo_pickup_deposit_safe.py` - Updated to use new API
 
 ---
 
@@ -301,7 +301,7 @@ python example_hardware_switch.py
 ### For Testing
 ```bash
 # Test in simulation
-python simulation/demo_pickup_deposit_safe.py
+python src/simulation/demo_pickup_deposit_safe.py
 
 # Test example script
 python example_hardware_switch.py
@@ -342,7 +342,7 @@ The simulation code is now a **perfect drop-in replacement** for real hardware:
 
 - **Full Guide**: `HARDWARE-API-COMPATIBILITY.md`
 - **Example Script**: `example_hardware_switch.py`
-- **Demo Script**: `simulation/demo_pickup_deposit_safe.py`
+- **Demo Script**: `src/simulation/demo_pickup_deposit_safe.py`
 
 ---
 

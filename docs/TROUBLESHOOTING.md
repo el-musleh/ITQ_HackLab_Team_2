@@ -69,7 +69,7 @@ Re-run import cells
 
 3. **Test servo manually:**
 ```python
-from SCSCtrl import TTLServo
+from src.SCSCtrl import TTLServo
 TTLServo.servoAngleCtrl(1, 0, 1, 150)  # Pan to center
 ```
 
@@ -291,7 +291,7 @@ state_machine:
 
 2. **Test arm manually:**
 ```python
-from hardware.arm import ArmController
+from src.hardware.arm import ArmController
 arm = ArmController(config)
 arm.pickup_sequence()
 ```
@@ -360,7 +360,7 @@ self.avoid_timeout = 3.0  # Was 2.0
 
 1. **Calibrate pickup height:**
 ```python
-from hardware.arm import ArmController
+from src.hardware.arm import ArmController
 arm = ArmController(config)
 arm.calibrate_pickup_height([-35, -40, -45, -50])
 # Test different shoulder angles
@@ -508,7 +508,7 @@ from jetbot import Robot
 robot = Robot()
 robot.stop()
 
-from hardware.arm import ArmController
+from src.hardware.arm import ArmController
 arm = ArmController()
 arm.home()
 ```

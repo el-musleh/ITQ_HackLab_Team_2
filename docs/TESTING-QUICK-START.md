@@ -23,10 +23,10 @@
 
 ```bash
 # Run happy path scenario
-./venv/bin/python simulation/tests/test_scenario_happy_path.py
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py
 
 # Save output to file
-./venv/bin/python simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_output.log
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_output.log
 ```
 
 ---
@@ -65,9 +65,9 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from simulation.sim_core import SimulationCore
-from simulation import create_sim_hardware
-from control.state_machine import StateMachine
+from src.simulation.sim_core import SimulationCore
+from src.simulation import create_sim_hardware
+from src.control.state_machine import StateMachine
 # ... other imports
 
 def main():
@@ -350,7 +350,7 @@ pytest.ini                   # Pytest configuration
 ./venv/bin/python -m pytest tests/ --cov=control --cov-report=term
 
 # Run simulation test
-./venv/bin/python simulation/tests/test_scenario_happy_path.py
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py
 
 # View documentation
 cat docs/state-machine-complete.md

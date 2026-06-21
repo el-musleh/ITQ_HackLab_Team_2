@@ -235,12 +235,12 @@ simulation:
 
 # main.py
 if config['simulation']['enabled']:
-    from simulation.sim_hardware import create_sim_hardware
+    from src.simulation.sim_hardware import create_sim_hardware
     chassis, arm, camera = create_sim_hardware(robot_id, config)
 else:
-    from hardware.chassis import Chassis
-    from hardware.arm import Arm
-    from hardware.camera import Camera
+    from src.hardware.chassis import Chassis
+    from src.hardware.arm import Arm
+    from src.hardware.camera import Camera
     chassis = Chassis()
     arm = Arm(config)
     camera = Camera()

@@ -4,7 +4,7 @@ This document describes the high-level control flow used by the ITQ Bottle Cap C
 
 ## Overview
 
-The robot runs a single `StateMachine` class (`control/state_machine.py`) driven by a `tick()` loop. The state machine is shared between the real robot (`main.py`) and the PyBullet simulation (`simulation/demo_pickup_deposit_safe.py`).
+The robot runs a single `StateMachine` class (`src/control/state_machine.py`) driven by a `tick()` loop. The state machine is shared between the real robot (`src/main.py`) and the PyBullet simulation (`src/simulation/demo_pickup_deposit_safe.py`).
 
 The seven main states are:
 
@@ -97,7 +97,7 @@ A yellow boundary always has priority:
 
 ## Tuning Parameters
 
-Default timeout values are in `control/state_machine.py`:
+Default timeout values are in `src/control/state_machine.py`:
 
 | State | Timeout |
 |---|---|
@@ -116,18 +116,18 @@ Motor speeds and PID gains come from `config.yaml`.
 
 ### Simulation
 ```bash
-python simulation/demo_pickup_deposit_safe.py
+python3 src/simulation/demo_pickup_deposit_safe.py
 ```
 
 ### Real Robot
 ```bash
-python main.py
+python3 src/main.py
 ```
 
 ## Files
 
-- `control/state_machine.py` — state machine implementation
-- `control/world_map.py` — ball registry and blind-spot grid
-- `control/odometry.py` — simple dead-reckoning pose estimator (real robot)
-- `main.py` — real robot entry point
-- `simulation/demo_pickup_deposit_safe.py` — simulation entry point
+- `src/control/state_machine.py` — state machine implementation
+- `src/control/world_map.py` — ball registry and blind-spot grid
+- `src/control/odometry.py` — simple dead-reckoning pose estimator (real robot)
+- `src/main.py` — real robot entry point
+- `src/simulation/demo_pickup_deposit_safe.py` — simulation entry point

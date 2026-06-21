@@ -4,36 +4,37 @@
 
 ```
 itq-bottle-cap-collector/
-├── main.py                      # Entry point — state machine orchestrator
-├── config.yaml                  # Camera thresholds, PID gains, course params
+├── src/
+│   ├── main.py                  # Entry point — state machine orchestrator
+│   ├── config.yaml              # (stays in root — shown here for reference)
+│   │
+│   ├── perception/              # 🎥 Computer vision module
+│   │   ├── __init__.py
+│   │   ├── camera.py            # Camera capture & calibration
+│   │   ├── detector.py          # Bottle cap detection (HSV blob + YOLO fallback)
+│   │   ├── obstacle_detector.py # Obstacle / wall detection
+│   │   └── calibrate.py         # On-site color/light calibration tool
+│   │
+│   ├── control/                 # 🎮 Movement & navigation module
+│   │   ├── __init__.py
+│   │   ├── state_machine.py     # SEARCH → APPROACH → COLLECT → RETURN
+│   │   ├── pid.py               # PID controller for approach
+│   │   ├── navigator.py         # Waypoint & path management
+│   │   └── recovery.py          # Stuck-detection & escape behaviors
+│   │
+│   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
+│   │   ├── __init__.py
+│   │   ├── chassis.py           # Tracked motor control via SCSCtrl
+│   │   ├── arm.py               # 4-DOF arm servo control
+│   │   ├── camera.py            # CSI camera on Jetson Nano
+│   │   └── sensors.py           # Ultrasonic / IR sensors
+│   │
+│   └── utils/                   # 🔧 Utilities
+│       ├── __init__.py
+│       ├── telemetry.py         # Logging: caps seen, collected, collisions, time
+│       └── visualizer.py        # Debug overlay for camera feed
 │
-├── perception/                  # 🎥 Computer vision module
-│   ├── __init__.py
-│   ├── camera.py               # Camera capture & calibration
-│   ├── detector.py             # Bottle cap detection (HSV blob + YOLO fallback)
-│   ├── obstacle_detector.py    # Obstacle / wall detection
-│   └── calibrate.py            # On-site color/light calibration tool
-│
-├── control/                     # 🎮 Movement & navigation module
-│   ├── __init__.py
-│   ├── state_machine.py        # SEARCH → APPROACH → COLLECT → RETURN
-│   ├── pid.py                  # PID controller for approach
-│   ├── navigator.py            # Waypoint & path management
-│   └── recovery.py             # Stuck-detection & escape behaviors
-│
-├── hardware/                    # 🔧 Robot interface (JETANK / Jetson Nano)
-│   ├── __init__.py
-│   ├── chassis.py              # Tracked motor control via SCSCtrl
-│   ├── arm.py                  # 4-DOF arm servo control
-│   ├── camera.py               # CSI camera on Jetson Nano
-│   └── sensors.py              # Ultrasonic / IR sensors
-│
-├── utils/                       # 🔧 Utilities
-│   ├── __init__.py
-│   ├── telemetry.py            # Logging: caps seen, collected, collisions, time
-│   └── visualizer.py           # Debug overlay for camera feed
-│
-└── robot_tests/                       # ✅ Validation scripts
+└── tests/                       # ✅ Validation scripts
     ├── test_camera.py
     ├── test_detection.py
     └── test_pid.py

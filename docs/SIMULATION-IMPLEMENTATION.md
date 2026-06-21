@@ -14,7 +14,7 @@ A PyBullet-based physics simulation environment for testing the ITQ Bottle Cap C
 
 #### Files Created
 
-**Simulation Code** (`simulation/`):
+**Simulation Code** (`src/simulation/`):
 1. `models/jetank.urdf` - Robot URDF model with chassis and 4-DOF arm
 2. `models/arena.urdf` - Arena with boundaries, obstacles, basket
 3. `sim_core.py` - PyBullet physics engine wrapper
@@ -93,14 +93,14 @@ ALL TESTS PASSED ✓
 ```bash
 # From project root
 source venv/bin/activate
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 ### In Your Code
 
 ```python
-from simulation.sim_core import SimulationCore
-from simulation.sim_hardware import create_sim_hardware
+from src.simulation.sim_core import SimulationCore
+from src.simulation.sim_hardware import create_sim_hardware
 import yaml
 
 # Load config
@@ -133,11 +133,11 @@ simulation:
 
 # main.py
 if config['simulation']['enabled']:
-    from simulation.sim_hardware import create_sim_hardware
+    from src.simulation.sim_hardware import create_sim_hardware
     # ... use simulation
 else:
-    from hardware.chassis import Chassis
-    from hardware.arm import Arm
+    from src.hardware.chassis import Chassis
+    from src.hardware.arm import Arm
     # ... use real hardware
 ```
 
@@ -190,9 +190,9 @@ Hardware Interface (chassis, arm, camera)
 5. Validate HSV detection works
 
 **Files to Create**:
-- `simulation/models/textures/` (ball/basket textures)
-- `simulation/test_perception.py`
-- `simulation/visualizer.py` (debug visualization)
+- `src/simulation/models/textures/` (ball/basket textures)
+- `src/simulation/test_perception.py`
+- `src/simulation/visualizer.py` (debug visualization)
 
 ### Phase 3: Full System (1-2 hours)
 
@@ -208,10 +208,10 @@ Hardware Interface (chassis, arm, camera)
 4. Benchmark performance
 
 **Files to Create**:
-- `simulation/run_simulation.py`
-- `simulation/test_state_machine.py`
-- `simulation/tune_pid.py`
-- `simulation/benchmark.py`
+- `src/simulation/run_simulation.py`
+- `src/simulation/test_state_machine.py`
+- `src/simulation/tune_pid.py`
+- `src/simulation/benchmark.py`
 
 ---
 

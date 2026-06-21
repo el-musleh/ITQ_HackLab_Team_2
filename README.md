@@ -58,7 +58,7 @@ cd itq-bottle-cap-collector
 ```
 In Jupyter:
 1. Navigate to itq-bottle-cap-collector/notebooks/
-2. Open 01_calibrate.ipynb
+2. Open 00_calibrate_basket.ipynb
 3. Run cells top-to-bottom (Shift+Enter)
 ```
 
@@ -87,7 +87,7 @@ Each module has its own notebook:
 
 | Notebook | Purpose | Who |
 |----------|---------|-----|
-| `01_calibrate.ipynb` | Camera color/light calibration | Yashveer |
+| `00_calibrate_basket.ipynb` | Camera color/light calibration | Yashveer |
 | `02_test_camera.ipynb` | Verify CSI camera capture | Yashveer |
 | `03_test_servos.ipynb` | Test arm + chassis servos | Mohammad |
 | `04_test_sensors.ipynb` | Read ultrasonic / IR distances | Myron |
@@ -98,8 +98,8 @@ Each module has its own notebook:
 ```python
 # Typical cell pattern in every notebook
 import cv2
-from hardware.camera import JetsonCamera
-from perception.detector import CapDetector
+from src.hardware.camera import JetsonCamera
+from src.perception.detector import CapDetector
 
 cam = JetsonCamera()
 detector = CapDetector()

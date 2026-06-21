@@ -23,21 +23,21 @@ Build an autonomous robot to:
 ### Phase 1: Perception Module ✓
 
 **Created:**
-1. **`perception/ball_detector.py`** — Multi-color ball detection
+1. **`src/perception/ball_detector.py`** — Multi-color ball detection
    - HSV segmentation for blue, red, silver
    - Contour detection with circularity filter
    - Multi-frame validation (3 frames)
    - Distance estimation from pixel area
    - Methods: `detect()`, `validate_detection()`, `draw_detections()`
 
-2. **`perception/obstacle_detector.py`** — Yellow tape & edge detection
+2. **`src/perception/obstacle_detector.py`** — Yellow tape & edge detection
    - Boundary detection (bottom 30% ROI)
    - Obstacle detection (front 15-65% ROI)
    - Turn direction logic (left/right/reverse)
    - Combined detection with priority
    - Methods: `detect_boundary()`, `detect_obstacle()`, `detect_combined()`
 
-3. **`perception/basket_detector.py`** — Gray basket localization
+3. **`src/perception/basket_detector.py`** — Gray basket localization
    - HSV-based gray detection
    - Calibration system (10-frame average)
    - Bearing angle calculation
@@ -47,28 +47,28 @@ Build an autonomous robot to:
 ### Phase 2: Control Module ✓
 
 **Created:**
-1. **`control/state_machine.py`** — Main FSM
+1. **`src/control/state_machine.py`** — Main FSM
    - States: STARTUP, SEARCH, APPROACH, COLLECT, RETURN, DEPOSIT, AVOID_BOUNDARY, AVOID_OBSTACLE, STOPPED
    - Transition logic with timeouts
    - Priority handling (boundary > obstacle)
    - Ball tracking and collection counter
    - Method: `update(perception_data)` → action commands
 
-2. **`control/pid.py`** — PID controller
+2. **`src/control/pid.py`** — PID controller
    - Single PID for 1D tracking
    - Dual PID for X/Y tracking
    - Anti-windup integral limiting
    - Configurable gains (kp, ki, kd)
    - Method: `update(measurement)` → control output
 
-3. **`control/navigator.py`** — Motion planning
+3. **`src/control/navigator.py`** — Motion planning
    - Action execution (approach, return, rotate, avoid)
    - PID-based target tracking
    - Speed limiting and safety
    - Differential drive control
    - Methods: `execute_action()`, `approach_target()`, `return_to_basket()`
 
-4. **`control/recovery.py`** — Stuck detection
+4. **`src/control/recovery.py`** — Stuck detection
    - Timeout-based stuck detection
    - Recovery sequence (reverse → turn)
    - Alternating turn direction
@@ -77,7 +77,7 @@ Build an autonomous robot to:
 ### Phase 3: Hardware Module ✓
 
 **Created:**
-1. **`hardware/arm.py`** — 4-DOF arm control
+1. **`src/hardware/arm.py`** — 4-DOF arm control
    - Predefined poses: HOME, PICKUP, CARRY, DEPOSIT
    - Pickup sequence (open → lower → close → lift)
    - Deposit sequence (position → open → home)
@@ -85,13 +85,13 @@ Build an autonomous robot to:
    - Calibration helper
    - Methods: `pickup_sequence()`, `deposit_sequence()`
 
-2. **`hardware/chassis.py`** — Motor control wrapper
+2. **`src/hardware/chassis.py`** — Motor control wrapper
    - Speed clamping (max 0.25)
    - Motor value tracking
    - Basic motion primitives
    - Methods: `set_motors()`, `forward()`, `backward()`, `turn_left()`, `turn_right()`
 
-3. **`hardware/camera.py`** — Camera interface
+3. **`src/hardware/camera.py`** — Camera interface
    - JetBot camera with OpenCV fallback
    - Pan/tilt servo control
    - Frame capture

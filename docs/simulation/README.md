@@ -26,7 +26,7 @@ pip install pybullet numpy opencv-python pyyaml
 
 ```bash
 # From project root
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 This will:
@@ -92,7 +92,7 @@ which python
 ```bash
 # Make sure you're in project root
 cd /path/to/ITQ_HackLab_Team_2
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more help.

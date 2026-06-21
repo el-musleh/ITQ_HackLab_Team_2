@@ -44,7 +44,7 @@ To solve GStreamer nvargus daemon crashes, we modified the global `jetbot` camer
 
 ### Servo Non-Blocking Driver
 * **Symptom:** importing `TTLServo` or `servoInt` blocks forever or crashes with `getch()` keyboard read prompts on failure to open the `/dev/ttyTHS1` serial port.
-* **Fix:** The driver code (`SCSCtrl/TTLServo.py` and `servoInt.py`) was updated to track a `port_opened` boolean variable:
+* **Fix:** The driver code (`src/SCSCtrl/TTLServo.py` and `servoInt.py`) was updated to track a `port_opened` boolean variable:
   * Port open failure is captured gracefully, printing a warning instead of calling `getch()` and `quit()`.
   * If `port_opened` is `False`, all serial writes are bypassed, and serial reads return a neutral mid-point position (`512`), allowing the codebase to load and run cleanly in mock/headless testing environments.
 

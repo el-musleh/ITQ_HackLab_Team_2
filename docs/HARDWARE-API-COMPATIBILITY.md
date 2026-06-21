@@ -17,7 +17,7 @@ The simulation code now has **IDENTICAL APIs** to the real hardware, enabling se
 
 **In Simulation**:
 ```python
-from simulation import ChassisController, ArmController, CameraController
+from src.simulation import ChassisController, ArmController, CameraController
 
 # Create hardware instances
 chassis = ChassisController(robot_id, max_speed=0.25)
@@ -27,9 +27,9 @@ camera = CameraController(config, robot_id=robot_id)
 
 **On Real Hardware**:
 ```python
-from hardware.chassis import ChassisController
-from hardware.arm import ArmController
-from hardware.camera import CameraController
+from src.hardware.chassis import ChassisController
+from src.hardware.arm import ArmController
+from src.hardware.camera import CameraController
 
 # Create hardware instances (same API!)
 chassis = ChassisController(robot, max_speed=0.25)
@@ -235,7 +235,7 @@ motors:
 ### Old Code (Simulation-Specific)
 
 ```python
-from simulation.sim_hardware import SimChassis, SimArm, SimCamera
+from src.simulation.sim_hardware import SimChassis, SimArm, SimCamera
 
 chassis = SimChassis(robot_id)
 arm = SimArm(robot_id, config)
@@ -248,7 +248,7 @@ arm.close_claw()  # Old method name
 ### New Code (Hardware-Compatible)
 
 ```python
-from simulation import ChassisController, ArmController, CameraController
+from src.simulation import ChassisController, ArmController, CameraController
 
 chassis = ChassisController(robot_id)
 arm = ArmController(robot_id, config)
@@ -269,7 +269,7 @@ arm.gripper_close()  # Hardware-compatible name
 USE_SIMULATION = True
 
 if USE_SIMULATION:
-    from simulation import ChassisController, ArmController, CameraController
+    from src.simulation import ChassisController, ArmController, CameraController
     # Simulation-specific setup
     sim = SimulationCore(gui=True)
     sim.initialize()
@@ -278,9 +278,9 @@ if USE_SIMULATION:
     arm = ArmController(robot_id, config)
     camera = CameraController(config, robot_id=robot_id)
 else:
-    from hardware.chassis import ChassisController
-    from hardware.arm import ArmController
-    from hardware.camera import CameraController
+    from src.hardware.chassis import ChassisController
+    from src.hardware.arm import ArmController
+    from src.hardware.camera import CameraController
     # Hardware-specific setup
     from jetbot import Robot
     robot = Robot()
@@ -298,11 +298,11 @@ else:
 import os
 
 if os.getenv('ROBOT_MODE') == 'HARDWARE':
-    from hardware.chassis import ChassisController
-    from hardware.arm import ArmController
-    from hardware.camera import CameraController
+    from src.hardware.chassis import ChassisController
+    from src.hardware.arm import ArmController
+    from src.hardware.camera import CameraController
 else:
-    from simulation import ChassisController, ArmController, CameraController
+    from src.simulation import ChassisController, ArmController, CameraController
 ```
 
 ### Option 3: Auto-Detection
@@ -311,13 +311,13 @@ else:
 try:
     from jetbot import Robot
     # Hardware available
-    from hardware.chassis import ChassisController
-    from hardware.arm import ArmController
-    from hardware.camera import CameraController
+    from src.hardware.chassis import ChassisController
+    from src.hardware.arm import ArmController
+    from src.hardware.camera import CameraController
     print("Running on HARDWARE")
 except ImportError:
     # No hardware, use simulation
-    from simulation import ChassisController, ArmController, CameraController
+    from src.simulation import ChassisController, ArmController, CameraController
     print("Running in SIMULATION")
 ```
 
@@ -411,17 +411,17 @@ All methods now return values consistent with hardware:
 
 ## Files Modified
 
-1. **`simulation/sim_hardware.py`**
+1. **`src/simulation/sim_hardware.py`**
    - Renamed classes to match hardware
    - Added missing methods
    - Standardized return values
    - Updated docstrings
 
-2. **`simulation/__init__.py`** (NEW)
+2. **`src/simulation/__init__.py`** (NEW)
    - Unified import module
    - Exports hardware-compatible classes
 
-3. **`simulation/demo_pickup_deposit_safe.py`**
+3. **`src/simulation/demo_pickup_deposit_safe.py`**
    - Updated imports
    - Changed `open_claw()` → `gripper_open()`
    - Changed `close_claw()` → `gripper_close()`
@@ -479,10 +479,10 @@ All methods now return values consistent with hardware:
 **Solution**: Make sure you're importing from the correct module:
 ```python
 # Correct
-from simulation import ChassisController
+from src.simulation import ChassisController
 
 # Incorrect
-from simulation.sim_hardware import SimChassis  # Old name!
+from src.simulation.sim_hardware import SimChassis  # Old name!
 ```
 
 ### Issue: Method Not Found

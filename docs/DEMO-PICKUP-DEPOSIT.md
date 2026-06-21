@@ -1,7 +1,7 @@
 # Complete Pickup & Deposit Demo
 
 **Status**: ✅ WORKING  
-**File**: `simulation/demo_pickup_deposit.py`
+**File**: `src/simulation/demo_pickup_deposit.py`
 
 ---
 
@@ -23,7 +23,7 @@ This demo shows the **complete autonomous workflow** for the bottle cap collecto
 ```bash
 # From project root
 source venv/bin/activate
-python simulation/demo_pickup_deposit.py
+python src/simulation/demo_pickup_deposit.py
 ```
 
 **Expected behavior**:

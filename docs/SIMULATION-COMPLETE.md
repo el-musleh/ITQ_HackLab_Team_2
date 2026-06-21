@@ -21,11 +21,11 @@ Successfully implemented a complete PyBullet simulation environment for the ITQ 
 ### What Was Built
 
 **Files Created**:
-- `simulation/models/jetank.urdf` - Robot URDF model
-- `simulation/models/arena.urdf` - Arena with obstacles and balls
-- `simulation/sim_core.py` - PyBullet physics engine
-- `simulation/sim_hardware.py` - Hardware abstraction layer
-- `simulation/test_basic_motion.py` - Validation tests
+- `src/simulation/models/jetank.urdf` - Robot URDF model
+- `src/simulation/models/arena.urdf` - Arena with obstacles and balls
+- `src/simulation/sim_core.py` - PyBullet physics engine
+- `src/simulation/sim_hardware.py` - Hardware abstraction layer
+- `src/simulation/test_basic_motion.py` - Validation tests
 
 **Test Results**:
 ```
@@ -46,9 +46,9 @@ Successfully implemented a complete PyBullet simulation environment for the ITQ 
 ### What Was Built
 
 **Files Created**:
-- `simulation/test_perception.py` - Perception validation
+- `src/simulation/test_perception.py` - Perception validation
 - Updated `sim_hardware.py` - Camera rendering
-- Fixed `perception/ball_detector.py` - Config compatibility
+- Fixed `src/perception/ball_detector.py` - Config compatibility
 
 **Test Results**:
 ```
@@ -69,8 +69,8 @@ Successfully implemented a complete PyBullet simulation environment for the ITQ 
 ### What Was Built
 
 **Files Created**:
-- `simulation/run_simulation.py` - Full autonomous loop
-- `simulation/demo_full_system.py` - Complete system demo
+- `src/simulation/run_simulation.py` - Full autonomous loop
+- `src/simulation/demo_full_system.py` - Complete system demo
 
 **Features**:
 - State machine integration
@@ -127,22 +127,22 @@ ITQ_HackLab_Team_2/
 ### Quick Test (Phase 1)
 ```bash
 source venv/bin/activate
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 ### Perception Test (Phase 2)
 ```bash
-python simulation/test_perception.py
+python src/simulation/test_perception.py
 ```
 
 ### Full Demo (Phase 3)
 ```bash
-python simulation/demo_full_system.py
+python src/simulation/demo_full_system.py
 ```
 
 ### Autonomous Run (Phase 3)
 ```bash
-python simulation/run_simulation.py
+python src/simulation/run_simulation.py
 ```
 
 ---

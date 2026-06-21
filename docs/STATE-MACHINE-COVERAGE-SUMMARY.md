@@ -76,7 +76,7 @@ Created comprehensive unit test file with 15 tests across 8 categories:
 
 Created first simulation test scenario:
 
-**File**: `simulation/tests/test_scenario_happy_path.py` (150+ lines)
+**File**: `src/simulation/tests/test_scenario_happy_path.py` (150+ lines)
 
 **Features**:
 - Spawns 1 ball near robot for easy collection
@@ -175,10 +175,10 @@ cd /home/steve/Notebooks/Projects/AI\ \&\ Robotics\ Hackathon\ Berlin/ITQ_HackLa
 
 ```bash
 # Run happy path scenario
-./venv/bin/python simulation/tests/test_scenario_happy_path.py
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py
 
 # With logging to file
-./venv/bin/python simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_happy_path.log
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_happy_path.log
 ```
 
 ### 3. Review Documentation

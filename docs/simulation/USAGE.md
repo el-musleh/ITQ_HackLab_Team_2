@@ -12,7 +12,7 @@ The simulation provides a virtual testing environment that mirrors the real chal
 
 ```bash
 # From project root
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 ### Switching Between Simulation and Hardware
@@ -21,8 +21,8 @@ The code uses the same interface for both simulated and real hardware:
 
 **Simulation Mode:**
 ```python
-from simulation.sim_core import SimulationCore
-from simulation.sim_hardware import create_sim_hardware
+from src.simulation.sim_core import SimulationCore
+from src.simulation.sim_hardware import create_sim_hardware
 import yaml
 
 # Load config
@@ -46,9 +46,9 @@ arm.pickup_sequence()
 
 **Hardware Mode:**
 ```python
-from hardware.chassis import Chassis
-from hardware.arm import Arm
-from hardware.camera import Camera
+from src.hardware.chassis import Chassis
+from src.hardware.arm import Arm
+from src.hardware.camera import Camera
 import yaml
 
 # Load config
@@ -178,7 +178,7 @@ chassis.stop()
 
 ```python
 # Test ball detection (Phase 2)
-from perception.ball_detector import BallDetector
+from src.perception.ball_detector import BallDetector
 
 detector = BallDetector(config)
 
@@ -196,7 +196,7 @@ for i in range(100):
 
 ```python
 # Test full autonomous loop (Phase 3)
-from control.state_machine import StateMachine
+from src.control.state_machine import StateMachine
 
 state_machine = StateMachine(config)
 
@@ -273,7 +273,7 @@ cv2.imshow('Camera', frame)
 cv2.waitKey(1)
 
 # Draw detections
-from perception.ball_detector import BallDetector
+from src.perception.ball_detector import BallDetector
 detector = BallDetector(config)
 
 detections = detector.detect(frame)
@@ -303,8 +303,8 @@ print(f"Motors: L={chassis.left_speed}, R={chassis.right_speed}")
 
 import sys
 import yaml
-from simulation.sim_core import SimulationCore
-from simulation.sim_hardware import create_sim_hardware
+from src.simulation.sim_core import SimulationCore
+from src.simulation.sim_hardware import create_sim_hardware
 
 # Load config
 config = yaml.safe_load(open('config.yaml'))

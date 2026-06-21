@@ -46,7 +46,7 @@ Arm movements: Instant   ← No gradual motion
 
 ### Fix 1: Correct Spawn Height ✅
 
-**File**: `simulation/sim_core.py`
+**File**: `src/simulation/sim_core.py`
 
 ```python
 # Before
@@ -64,7 +64,7 @@ def load_robot(self, start_pos=[0, -0.6, 0.15], ...):
 
 ### Fix 2: Lower Center of Mass ✅
 
-**File**: `simulation/models/jetank.urdf`
+**File**: `src/simulation/models/jetank.urdf`
 
 ```xml
 <!-- Before -->
@@ -89,7 +89,7 @@ def load_robot(self, start_pos=[0, -0.6, 0.15], ...):
 
 ### Fix 3: Stability Monitoring ✅
 
-**File**: `simulation/demo_pickup_deposit_safe.py`
+**File**: `src/simulation/demo_pickup_deposit_safe.py`
 
 Added comprehensive stability checking:
 
@@ -206,7 +206,7 @@ Status: FAILED
 
 ```bash
 source venv/bin/activate
-python simulation/demo_pickup_deposit_safe.py
+python src/simulation/demo_pickup_deposit_safe.py
 ```
 
 ### Check Logs
@@ -277,9 +277,9 @@ The robot stability issue has been **completely resolved** through:
 ---
 
 **Files Modified**:
-- `simulation/sim_core.py` - Fixed spawn height
-- `simulation/models/jetank.urdf` - Lowered center of mass
-- `simulation/demo_pickup_deposit_safe.py` - Added stability checks and logging
+- `src/simulation/sim_core.py` - Fixed spawn height
+- `src/simulation/models/jetank.urdf` - Lowered center of mass
+- `src/simulation/demo_pickup_deposit_safe.py` - Added stability checks and logging
 
 **Next Steps**:
 - Fine-tune basket detection

@@ -9,7 +9,7 @@ PyBullet-based physics simulation for the ITQ Bottle Cap Collector robot.
 source venv/bin/activate
 
 # Run Phase 1 test
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 ## What's Included
@@ -65,8 +65,8 @@ simulation/
 ### Import Simulation
 
 ```python
-from simulation.sim_core import SimulationCore
-from simulation.sim_hardware import create_sim_hardware
+from src.simulation.sim_core import SimulationCore
+from src.simulation.sim_hardware import create_sim_hardware
 import yaml
 
 # Load config
@@ -91,13 +91,13 @@ arm.pickup_sequence()
 
 ```bash
 # Phase 1: Basic motion
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 
 # Phase 2: Perception (coming soon)
-# python simulation/test_perception.py
+# python src/simulation/test_perception.py
 
 # Phase 3: Full system (coming soon)
-# python simulation/run_simulation.py
+# python src/simulation/run_simulation.py
 ```
 
 ## Documentation

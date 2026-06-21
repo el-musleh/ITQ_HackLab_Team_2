@@ -1060,17 +1060,17 @@ Here is the current status update of what is running and the roadmap of what nee
 To move the project from prototype notebooks into the final deployable robot architecture, we need to extract the logic into their respective modules:
 
 #### Phase 1: Perception Module
-* [ ] Export the yellow tape masking pipeline from [navigation.ipynb](file:///workspace/itq-bottle-cap-collector/navigation.ipynb) to `perception/detector.py`.
-* [ ] Export the Canny edge detection obstacle pipeline to `perception/obstacle_detector.py`.
-* [ ] Complete `perception/calibrate.py` to save on-site color limits to [config.yaml](file:///workspace/itq-bottle-cap-collector/config.yaml).
+* [ ] Export the yellow tape masking pipeline from [navigation.ipynb](file:///workspace/itq-bottle-cap-collector/navigation.ipynb) to `src/perception/detector.py`.
+* [ ] Export the Canny edge detection obstacle pipeline to `src/perception/obstacle_detector.py`.
+* [ ] Complete `src/perception/calibrate.py` to save on-site color limits to [config.yaml](file:///workspace/itq-bottle-cap-collector/config.yaml).
 
 #### Phase 2: Control Module
-* [ ] Extract state transition logic (WANDER $\rightarrow$ AVOID) from the notebooks into `control/state_machine.py`.
-* [ ] Move PID controller code to `control/pid.py` for line/tape following.
-* [ ] Implement recovery behaviors (reverse + turn 45° if stuck) in `control/recovery.py`.
+* [ ] Extract state transition logic (WANDER $\rightarrow$ AVOID) from the notebooks into `src/control/state_machine.py`.
+* [ ] Move PID controller code to `src/control/pid.py` for line/tape following.
+* [ ] Implement recovery behaviors (reverse + turn 45° if stuck) in `src/control/recovery.py`.
 
 #### Phase 3: Telemetry & Integration
-* [ ] Write `utils/telemetry.py` to record caps captured, time elapsed, and collision tallies.
+* [ ] Write `src/utils/telemetry.py` to record caps captured, time elapsed, and collision tallies.
 * [ ] Update [main.py](file:///workspace/itq-bottle-cap-collector/main.py) to import the extracted modules and orchestrate the full loop at 20 Hz.
 * [ ] Run `python3 -m tests.runner` on the real Jetson Nano to verify motors and servos physically.
 
@@ -1944,7 +1944,7 @@ I will view the log of the notebook runner task from the beginning.
 
 ### 🤖 Antigravity Assistant @ 16:06:37
 
-I will view the contents of `SCSCtrl/TTLServo.py` to see if it makes blocking serial connections or tries to open `/dev/ttyUSB0` or similar ports.
+I will view the contents of `src/SCSCtrl/TTLServo.py` to see if it makes blocking serial connections or tries to open `/dev/ttyUSB0` or similar ports.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing SCSCtrl/TTLServo.py lines 1-100*
@@ -1953,7 +1953,7 @@ I will view the contents of `SCSCtrl/TTLServo.py` to see if it makes blocking se
 
 ### 🤖 Antigravity Assistant @ 16:06:40
 
-I will view more lines of `SCSCtrl/TTLServo.py` to see what serial writes and reads are performed.
+I will view more lines of `src/SCSCtrl/TTLServo.py` to see what serial writes and reads are performed.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing SCSCtrl/TTLServo.py lines 101-200*
@@ -1962,7 +1962,7 @@ I will view more lines of `SCSCtrl/TTLServo.py` to see what serial writes and re
 
 ### 🤖 Antigravity Assistant @ 16:06:43
 
-I will update `SCSCtrl/TTLServo.py` to remove blocking calls on failure to open/configure the serial port, so it does not hang the process in simulation/headless environments.
+I will update `src/SCSCtrl/TTLServo.py` to remove blocking calls on failure to open/configure the serial port, so it does not hang the process in simulation/headless environments.
 
 #### 🛠️ Executed Tools
 - **replace_file_content**: *Replacing blocking code in SCSCtrl/TTLServo.py*
@@ -2118,7 +2118,7 @@ I will search for `def servoAngleCtrl` in the `SCSCtrl` folder.
 
 ### 🤖 Antigravity Assistant @ 16:08:44
 
-I will view the `servoAngleCtrl` implementation starting at line 298 in `SCSCtrl/TTLServo.py`.
+I will view the `servoAngleCtrl` implementation starting at line 298 in `src/SCSCtrl/TTLServo.py`.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing TTLServo.py lines 298-350*
@@ -2127,7 +2127,7 @@ I will view the `servoAngleCtrl` implementation starting at line 298 in `SCSCtrl
 
 ### 🤖 Antigravity Assistant @ 16:08:47
 
-I will view lines 351-390 of `SCSCtrl/TTLServo.py` to see the rest of `xyInputSmooth`.
+I will view lines 351-390 of `src/SCSCtrl/TTLServo.py` to see the rest of `xyInputSmooth`.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing TTLServo.py lines 351-390*
@@ -2136,7 +2136,7 @@ I will view lines 351-390 of `SCSCtrl/TTLServo.py` to see the rest of `xyInputSm
 
 ### 🤖 Antigravity Assistant @ 16:08:50
 
-I will view `SCSCtrl/TTLServo.py` lines 75 to 145 to see how to integrate the mock behavior when the serial port is closed.
+I will view `src/SCSCtrl/TTLServo.py` lines 75 to 145 to see how to integrate the mock behavior when the serial port is closed.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing TTLServo.py lines 75-145*
@@ -2145,7 +2145,7 @@ I will view `SCSCtrl/TTLServo.py` lines 75 to 145 to see how to integrate the mo
 
 ### 🤖 Antigravity Assistant @ 16:08:54
 
-I will modify `SCSCtrl/TTLServo.py` to add `port_opened` tracking and bypass serial IO in `syncCtrl` and `infoSingleGet` when the port is closed.
+I will modify `src/SCSCtrl/TTLServo.py` to add `port_opened` tracking and bypass serial IO in `syncCtrl` and `infoSingleGet` when the port is closed.
 
 #### 🛠️ Executed Tools
 - **replace_file_content**: *Modifying port open and bypass in SCSCtrl/TTLServo.py*
@@ -2154,7 +2154,7 @@ I will modify `SCSCtrl/TTLServo.py` to add `port_opened` tracking and bypass ser
 
 ### 🤖 Antigravity Assistant @ 16:08:58
 
-I will view `SCSCtrl/TTLServo.py` lines 320 to 375 to get the exact lines for `nowPosUpdate` and `servoStop`.
+I will view `src/SCSCtrl/TTLServo.py` lines 320 to 375 to get the exact lines for `nowPosUpdate` and `servoStop`.
 
 #### 🛠️ Executed Tools
 - **view_file**: *Viewing TTLServo.py lines 320-375*
@@ -2163,7 +2163,7 @@ I will view `SCSCtrl/TTLServo.py` lines 320 to 375 to get the exact lines for `n
 
 ### 🤖 Antigravity Assistant @ 16:09:01
 
-I will apply bypass checks to `nowPosUpdate` and `servoStop` in `SCSCtrl/TTLServo.py` to prevent reading/writing over the closed serial port.
+I will apply bypass checks to `nowPosUpdate` and `servoStop` in `src/SCSCtrl/TTLServo.py` to prevent reading/writing over the closed serial port.
 
 #### 🛠️ Executed Tools
 - **multi_replace_file_content**: *Modifying nowPosUpdate and servoStop in SCSCtrl/TTLServo.py*
@@ -2748,7 +2748,7 @@ Here is a summary of the fixes implemented to resolve the camera, hardware execu
    Patched the `jetbot` library camera module (`opencv_gst_camera.py`) to catch GStreamer initialization and EGL connection errors, falling back to a thread-based `MockCamera` automatically. This enables camera cells to execute cleanly.
    
 2. **Serial IO Timeout Prevention**  
-   Modified `SCSCtrl/TTLServo.py` and `servoInt.py` to check if `/dev/ttyTHS1` was opened. If not, it skips all serial writes and returns default mock values for read requests, avoiding serial read timeouts.
+   Modified `src/SCSCtrl/TTLServo.py` and `servoInt.py` to check if `/dev/ttyTHS1` was opened. If not, it skips all serial writes and returns default mock values for read requests, avoiding serial read timeouts.
 
 3. **Capped Infinite Loops in Example Notebooks**  
    Wrote a utility script to locate infinite loops (`while True:`) in the example notebooks (e.g. `Joaquin-Test1.ipynb`, `gamepadCtrl_en.ipynb`) and safely replace them with a capped iteration limit (`for _ in range(5)`).

@@ -112,7 +112,7 @@
 
 ### ✅ Phase 3: Simulation Tests (PARTIAL - 1/11 scenarios)
 
-**Directory**: `simulation/tests/`
+**Directory**: `src/simulation/tests/`
 
 **Scenario Scripts Implemented**:
 
@@ -292,10 +292,10 @@
 
 ```bash
 # Run happy path scenario
-./venv/bin/python simulation/tests/test_scenario_happy_path.py
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py
 
 # Run with logging
-./venv/bin/python simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_output.log
+./venv/bin/python src/simulation/tests/test_scenario_happy_path.py 2>&1 | tee test_output.log
 ```
 
 ### Coverage Report
@@ -317,8 +317,8 @@
 - ✅ `tests/mocks.py` (300+ lines)
 - ✅ `tests/test_utils.py` (200+ lines)
 - ✅ `tests/test_state_machine.py` (250+ lines, 15 tests)
-- ✅ `simulation/tests/__init__.py`
-- ✅ `simulation/tests/test_scenario_happy_path.py` (150+ lines)
+- ✅ `src/simulation/tests/__init__.py`
+- ✅ `src/simulation/tests/test_scenario_happy_path.py` (150+ lines)
 
 ### Documentation Files
 - ✅ `docs/state-machine-complete.md` (600+ lines)

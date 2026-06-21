@@ -72,7 +72,7 @@ cd /workspace/JETANK/JETANK_5_colorTracking
 1. Place a bottle cap ~30cm in front of camera
 2. Run the color detection cells
 3. Adjust `colorUpper` and `colorLower` HSV values until the cap is detected
-4. **Save the working HSV values** — these go into `perception/detector.py`
+4. **Save the working HSV values** — these go into `src/perception/detector.py`
 
 **Example presets:**
 ```python

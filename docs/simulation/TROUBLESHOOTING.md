@@ -68,7 +68,7 @@ FileNotFoundError: Robot URDF not found: simulation/models/jetank.urdf
 ```bash
 # Make sure you're running from project root
 cd /path/to/ITQ_HackLab_Team_2
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 
 # NOT from simulation directory:
 # cd simulation  # ❌ Wrong
@@ -273,7 +273,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Now imports work
-from hardware.chassis import Chassis
+from src.hardware.chassis import Chassis
 ```
 
 ### "No module named 'perception'"

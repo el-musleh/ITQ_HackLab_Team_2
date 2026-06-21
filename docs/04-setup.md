@@ -67,16 +67,20 @@ git config user.email "your-github-email@example.com"
 │   └── SCSCtrl/
 │
 └── itq-bottle-cap-collector/  # YOUR project
-    ├── main.py
+    ├── src/
+    │   ├── main.py
+    │   ├── perception/
+    │   ├── control/
+    │   ├── hardware/
+    │   ├── utils/
+    │   └── SCSCtrl/
+    ├── tests/
+    ├── notebooks/
+    ├── docs/
     ├── config.yaml
     ├── setup.sh
-    ├── venv/
-    ├── perception/
-    ├── control/
-    ├── hardware/
-    ├── utils/
-    ├── robot_tests/
-    └── notebooks/
+    ├── requirements.txt
+    └── venv/
 ```
 
 > **Rule:** Keep `JETANK/` as reference. Do all work in `itq-bottle-cap-collector/`.

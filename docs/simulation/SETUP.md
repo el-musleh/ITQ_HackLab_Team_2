@@ -90,14 +90,14 @@ No simulation-specific configuration needed - it reads from the main config.
 ### Test 1: Import Modules
 
 ```bash
-python -c "from simulation.sim_core import SimulationCore; print('✓ sim_core OK')"
-python -c "from simulation.sim_hardware import SimChassis; print('✓ sim_hardware OK')"
+python -c "from src.simulation.sim_core import SimulationCore; print('✓ sim_core OK')"
+python -c "from src.simulation.sim_hardware import SimChassis; print('✓ sim_hardware OK')"
 ```
 
 ### Test 2: Run Basic Motion Test
 
 ```bash
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 **Expected behavior:**
@@ -136,7 +136,7 @@ pip install pybullet
 ```bash
 # Run from project root, not from simulation/ directory
 cd /path/to/ITQ_HackLab_Team_2
-python simulation/test_basic_motion.py
+python src/simulation/test_basic_motion.py
 ```
 
 ### Issue 3: PyBullet GUI doesn't open
