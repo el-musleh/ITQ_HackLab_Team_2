@@ -25,8 +25,11 @@ pip install pybullet numpy opencv-python pyyaml
 ### 2. Run Basic Test
 
 ```bash
-# From project root
-python src/simulation/test_basic_motion.py
+# Headless mode (no GUI, for CI / automated testing)
+python3 src/simulation/test_basic_motion.py --headless
+
+# GUI mode (requires display)
+python3 src/simulation/test_basic_motion.py
 ```
 
 This will:
@@ -48,13 +51,22 @@ This will:
 ## File Structure
 
 ```
-simulation/
+src/simulation/
 ├── models/
 │   ├── jetank.urdf          # Robot model
 │   └── arena.urdf           # Arena + objects
 ├── sim_core.py              # PyBullet engine
 ├── sim_hardware.py          # Simulated hardware interfaces
-└── test_basic_motion.py     # Phase 1 validation
+├── run_simulation.py        # Phase 3 full autonomous run
+├── test_basic_motion.py     # Phase 1 validation
+├── test_perception.py       # Phase 2 validation
+└── tests/
+    └── test_scenario_happy_path.py
+
+tests/                       # Headless pytest suite
+├── test_simulation_core.py
+├── test_sim_hardware.py
+└── test_simulation_scenario.py
 
 docs/simulation/
 ├── README.md                # This file
@@ -65,11 +77,44 @@ docs/simulation/
 
 ## Next Steps
 
-1. **Phase 1 Complete**: Basic physics ✓
-2. **Phase 2**: Add camera rendering and perception testing
-3. **Phase 3**: Full autonomous loop with state machine
+1. **Phase 1**: Basic physics — tests in progress
+2. **Phase 2**: Camera rendering and perception testing — tests in progress
+3. **Phase 3**: Full autonomous loop with state machine — tests in progress
 
 See [USAGE.md](USAGE.md) for detailed instructions.
+
+## Configuration
+
+Simulation behavior is controlled by the `simulation:` section of `config.yaml`:
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `gui` | `true` | Show PyBullet GUI (set `false` for headless/CI) |
+| `real_time` | `true` | Step at wall-clock real time |
+| `locomotion_mode` | `velocity` | `velocity` (stable) or `wheels` (realistic, drives wheel joints) |
+| `ball_spawn_seed` | `42` | RNG seed for reproducible ball positions |
+| `camera_fov` | `160` | Simulated camera FOV (degrees) |
+| `renderer` | `auto` | `auto` / `opengl` / `tiny` (headless fallback) |
+
+## Headless Tests
+
+The simulation ships with pytest tests that run headless (`p.DIRECT`), safe for CI:
+
+```bash
+# All simulation tests
+python3 -m pytest tests/ -m simulation
+
+# Non-simulation tests only
+python3 -m pytest tests/ -m "not simulation"
+
+# All tests
+python3 -m pytest tests/
+
+# Standalone headless scripts
+python3 src/simulation/test_basic_motion.py --headless
+python3 src/simulation/test_perception.py --headless
+python3 src/simulation/run_simulation.py --headless --duration 60 --balls 5
+```
 
 ## Key Features
 
@@ -91,8 +136,7 @@ which python
 **Import errors?**
 ```bash
 # Make sure you're in project root
-cd /path/to/ITQ_HackLab_Team_2
-python src/simulation/test_basic_motion.py
+python3 src/simulation/test_basic_motion.py --headless
 ```
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more help.

@@ -2,6 +2,11 @@ import json
 import os
 import re
 
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
+
 def clean_user_content(content):
     if not content:
         return ""
@@ -13,7 +18,7 @@ def clean_user_content(content):
 
 def export_transcript():
     log_path = "/root/.gemini/antigravity-cli/brain/103c705c-dcdf-4af1-b9e5-29f68718db32/.system_generated/logs/transcript_full.jsonl"
-    dest_path = "/workspace/itq-bottle-cap-collector/docs/conversation_transcript.md"
+    dest_path = os.path.join(project_root, "docs", "conversation_transcript.md")
     
     print(f"Reading logs from {log_path}...")
     if not os.path.exists(log_path):

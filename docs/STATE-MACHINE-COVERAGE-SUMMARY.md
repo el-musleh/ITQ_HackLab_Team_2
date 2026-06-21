@@ -159,7 +159,7 @@ Created comprehensive documentation:
 ### 1. Run Unit Tests
 
 ```bash
-cd /home/steve/Notebooks/Projects/AI\ \&\ Robotics\ Hackathon\ Berlin/ITQ_HackLab_Team_2
+cd ITQ_HackLab_Team_2
 
 # Install pytest if needed
 ./venv/bin/pip install pytest
@@ -311,7 +311,7 @@ pytest.ini
 ## How to Continue
 
 ### Option 1: Complete All Tests
-Follow the plan in `/home/steve/.windsurf/plans/state-machine-full-coverage-54037a.md` to implement remaining 56 tests.
+Follow the plan in `.windsurf/plans/state-machine-full-coverage-54037a.md` to implement remaining 56 tests.
 
 ### Option 2: Focus on Critical Paths
 Implement only the most important tests:

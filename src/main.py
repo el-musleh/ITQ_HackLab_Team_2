@@ -18,12 +18,7 @@ from src.hardware.camera import CameraController
 from src.control.state_machine import StateMachine
 from src.control.world_map import WorldMap
 from src.control.odometry import DifferentialDriveOdometry
-
-
-def load_config():
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.yaml')
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+from src.utils import load_config
 
 
 def main():
@@ -92,9 +87,18 @@ def main():
     except KeyboardInterrupt:
         print("\nShutting down...")
     finally:
-        chassis.stop()
-        arm.home()
-        camera.release()
+        try:
+            chassis.stop()
+        except Exception as e:
+            print(f"Chassis stop error: {e}")
+        try:
+            arm.home()
+        except Exception as e:
+            print(f"Arm home error: {e}")
+        try:
+            camera.release()
+        except Exception as e:
+            print(f"Camera release error: {e}")
         sys.exit(0)
 
 

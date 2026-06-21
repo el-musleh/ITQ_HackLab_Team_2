@@ -1,12 +1,15 @@
 """
 Test Perception - Phase 2 Validation
-Tests camera rendering and perception pipeline with synthetic images
+Tests camera rendering and perception pipeline with synthetic images.
+
+Usage:
+    python3 src/simulation/test_perception.py [--headless]
 """
 
+import argparse
 import sys
 import os
 import time
-import yaml
 import cv2
 import numpy as np
 
@@ -18,20 +21,11 @@ from src.simulation.sim_hardware import create_sim_hardware
 from src.perception.ball_detector import BallDetector
 from src.perception.obstacle_detector import ObstacleDetector
 from src.perception.basket_detector import BasketDetector
+from src.utils import load_config
 
 
-def load_config():
-    """Load configuration from config.yaml"""
-    config_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'config.yaml'
-    )
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
-
-
-def test_camera_rendering(camera, sim, duration=3.0):
-    """Test camera image capture"""
+def test_camera_rendering(camera, sim, duration=3.0, show_viz=True):
+    """Test camera image capture."""
     print("\n=== Test 1: Camera Rendering ===")
     
     frames_captured = 0
@@ -43,26 +37,29 @@ def test_camera_rendering(camera, sim, duration=3.0):
         if frame is not None and frame.size > 0:
             frames_captured += 1
             
-            # Show frame occasionally
-            if frames_captured % 30 == 0:
+            if show_viz and frames_captured % 30 == 0:
                 print(f"  Captured {frames_captured} frames, shape: {frame.shape}")
                 cv2.imshow('Camera View', frame)
                 cv2.waitKey(1)
         
         sim.step()
     
-    cv2.destroyAllWindows()
+    if show_viz:
+        cv2.destroyAllWindows()
     
     fps = frames_captured / duration
-    print(f"✓ Camera rendering test complete")
+    print(f"Camera rendering test complete")
     print(f"  Frames captured: {frames_captured}")
     print(f"  Average FPS: {fps:.1f}")
     
-    return frames_captured > 0
+    assert frames_captured > 0, "No frames captured"
+    w, h = camera.get_frame_size()
+    assert frame is not None and frame.shape == (h, w, 3), f"Frame shape {frame.shape} != ({h}, {w}, 3)"
+    return True
 
 
-def test_ball_detection(camera, sim, config, duration=5.0):
-    """Test ball detection on synthetic images"""
+def test_ball_detection(camera, sim, config, duration=5.0, show_viz=True):
+    """Test ball detection on synthetic images."""
     print("\n=== Test 2: Ball Detection ===")
     
     detector = BallDetector(config)
@@ -77,35 +74,33 @@ def test_ball_detection(camera, sim, config, duration=5.0):
         if frame is not None and frame.size > 0:
             frames_tested += 1
             
-            # Run detection
             detections = detector.detect(frame)
             
             if detections:
                 detections_count += len(detections)
                 
-                # Draw detections
-                debug_frame = detector.draw_detections(frame, detections)
-                
-                # Show every 10th frame
-                if frames_tested % 10 == 0:
+                if show_viz and frames_tested % 10 == 0:
+                    debug_frame = detector.draw_detections(frame, detections)
                     print(f"  Frame {frames_tested}: Found {len(detections)} balls")
                     cv2.imshow('Ball Detection', debug_frame)
                     cv2.waitKey(1)
         
         sim.step()
     
-    cv2.destroyAllWindows()
+    if show_viz:
+        cv2.destroyAllWindows()
     
-    print(f"✓ Ball detection test complete")
+    print(f"Ball detection test complete")
     print(f"  Frames tested: {frames_tested}")
     print(f"  Total detections: {detections_count}")
-    print(f"  Avg detections/frame: {detections_count/max(frames_tested,1):.2f}")
     
+    assert frames_tested > 0, "No frames tested"
+    assert isinstance(detections, list), "detect() should return a list"
     return detections_count > 0
 
 
-def test_obstacle_detection(camera, sim, config, duration=3.0):
-    """Test obstacle detection (yellow tape)"""
+def test_obstacle_detection(camera, sim, config, duration=3.0, show_viz=True):
+    """Test obstacle detection (yellow tape)."""
     print("\n=== Test 3: Obstacle Detection ===")
     
     detector = ObstacleDetector(config)
@@ -120,8 +115,11 @@ def test_obstacle_detection(camera, sim, config, duration=3.0):
         if frame is not None and frame.size > 0:
             frames_tested += 1
             
-            # Run detection
             result = detector.detect_combined(frame)
+            
+            assert isinstance(result, dict), "detect_combined() should return a dict"
+            assert 'obstacle_detected' in result, "Missing 'obstacle_detected' key"
+            assert 'boundary_detected' in result, "Missing 'boundary_detected' key"
             
             if result['obstacle_detected'] or result['boundary_detected']:
                 obstacle_detected_count += 1
@@ -132,15 +130,16 @@ def test_obstacle_detection(camera, sim, config, duration=3.0):
         
         sim.step()
     
-    print(f"✓ Obstacle detection test complete")
+    print(f"Obstacle detection test complete")
     print(f"  Frames tested: {frames_tested}")
     print(f"  Obstacles detected: {obstacle_detected_count}")
     
+    assert frames_tested > 0, "No frames tested"
     return True
 
 
-def test_basket_detection(camera, sim, config, duration=3.0):
-    """Test basket detection"""
+def test_basket_detection(camera, sim, config, duration=3.0, show_viz=True):
+    """Test basket detection."""
     print("\n=== Test 4: Basket Detection ===")
     
     detector = BasketDetector(config)
@@ -155,28 +154,35 @@ def test_basket_detection(camera, sim, config, duration=3.0):
         if frame is not None and frame.size > 0:
             frames_tested += 1
             
-            # Run detection
             result = detector.detect(frame)
+            
+            assert isinstance(result, dict), "detect() should return a dict"
+            assert 'detected' in result, "Missing 'detected' key"
             
             if result['detected']:
                 basket_detected_count += 1
                 
                 if frames_tested % 10 == 0:
-                    print(f"  Frame {frames_tested}: Basket at angle={result['angle']:.1f}°, "
-                          f"distance={result['distance_px']:.0f}px")
+                    print(f"  Frame {frames_tested}: Basket at angle={result.get('angle', 0):.1f}, "
+                          f"distance={result.get('distance_px', 0):.0f}px")
         
         sim.step()
     
-    print(f"✓ Basket detection test complete")
+    print(f"Basket detection test complete")
     print(f"  Frames tested: {frames_tested}")
     print(f"  Basket detected: {basket_detected_count} times")
     
+    assert frames_tested > 0, "No frames tested"
     return basket_detected_count > 0
 
 
-def test_live_visualization(camera, chassis, sim, config, duration=10.0):
-    """Live visualization with all detections"""
+def test_live_visualization(camera, chassis, sim, config, duration=10.0, show_viz=True):
+    """Live visualization with all detections."""
     print("\n=== Test 5: Live Visualization ===")
+    if not show_viz:
+        print("  (skipped in headless mode)")
+        return True
+    
     print("Showing live camera feed with detections for 10 seconds...")
     
     ball_detector = BallDetector(config)
@@ -195,19 +201,15 @@ def test_live_visualization(camera, chassis, sim, config, duration=10.0):
         if frame is not None and frame.size > 0:
             frame_count += 1
             
-            # Run all detections
             balls = ball_detector.detect(frame)
             obstacles = obstacle_detector.detect_combined(frame)
             basket = basket_detector.detect(frame)
             
-            # Draw detections
             display_frame = frame.copy()
             
-            # Draw balls
             if balls:
                 display_frame = ball_detector.draw_detections(display_frame, balls)
             
-            # Draw basket
             if basket['detected']:
                 cv2.circle(display_frame, 
                           (int(basket['center_x']), int(basket['center_y'])), 
@@ -216,7 +218,6 @@ def test_live_visualization(camera, chassis, sim, config, duration=10.0):
                            (int(basket['center_x']) + 10, int(basket['center_y'])),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 2)
             
-            # Draw obstacle warning
             if obstacles['obstacle_detected']:
                 cv2.putText(display_frame, "OBSTACLE!", (10, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
@@ -225,7 +226,6 @@ def test_live_visualization(camera, chassis, sim, config, duration=10.0):
                 cv2.putText(display_frame, "BOUNDARY!", (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
             
-            # Show frame
             cv2.imshow('Live Perception', display_frame)
             cv2.waitKey(1)
         
@@ -234,80 +234,80 @@ def test_live_visualization(camera, chassis, sim, config, duration=10.0):
     chassis.stop()
     cv2.destroyAllWindows()
     
-    print(f"✓ Live visualization complete")
+    print(f"Live visualization complete")
     print(f"  Total frames: {frame_count}")
+    return True
 
 
-def main():
-    """Run all perception tests"""
+def main(headless=False):
+    """Run all perception tests."""
     print("=" * 60)
     print("PHASE 2 VALIDATION: Camera & Vision")
     print("=" * 60)
     
-    # Load configuration
     config = load_config()
+    config.setdefault('simulation', {})
+    if headless:
+        config['simulation'] = {**config['simulation'], 'renderer': 'tiny'}
     
-    # Initialize simulation
+    show_viz = not headless
+    
     print("\nInitializing simulation...")
-    sim = SimulationCore(gui=True, real_time=True)
+    sim = SimulationCore(gui=not headless, real_time=not headless, config=config)
     sim.initialize()
     sim.load_arena()
-    robot_id = sim.load_robot(start_pos=[0, -0.6, 0.05])
-    sim.spawn_balls(num_balls=22)
+    robot_id = sim.load_robot(start_pos=[0.5, 0.5, 0.15])
+    sim.spawn_balls(num_balls=5)
     
-    # Create hardware interfaces
     print("Creating simulated hardware...")
-    chassis, arm, camera = create_sim_hardware(robot_id, config)
+    chassis, arm, camera = create_sim_hardware(robot_id, config, sim=sim)
     
-    # Run tests
+    passed = 0
+    failed = 0
+    tests = [
+        ("Camera Rendering", lambda: test_camera_rendering(camera, sim, show_viz=show_viz)),
+        ("Ball Detection", lambda: test_ball_detection(camera, sim, config, show_viz=show_viz)),
+        ("Obstacle Detection", lambda: test_obstacle_detection(camera, sim, config, show_viz=show_viz)),
+        ("Basket Detection", lambda: test_basket_detection(camera, sim, config, show_viz=show_viz)),
+        ("Live Visualization", lambda: test_live_visualization(camera, chassis, sim, config, show_viz=show_viz)),
+    ]
+    
     try:
-        # Test 1: Camera rendering
-        camera_ok = test_camera_rendering(camera, sim)
+        for name, test_fn in tests:
+            try:
+                test_fn()
+                passed += 1
+            except AssertionError as e:
+                print(f"  FAIL: {e}")
+                failed += 1
         
-        if not camera_ok:
-            print("\n❌ Camera rendering failed!")
-            return
-        
-        # Test 2: Ball detection
-        balls_ok = test_ball_detection(camera, sim, config)
-        
-        # Test 3: Obstacle detection
-        obstacles_ok = test_obstacle_detection(camera, sim, config)
-        
-        # Test 4: Basket detection
-        basket_ok = test_basket_detection(camera, sim, config)
-        
-        # Test 5: Live visualization
-        test_live_visualization(camera, chassis, sim, config)
-        
-        # Final summary
         print("\n" + "=" * 60)
-        print("PHASE 2 VALIDATION RESULTS")
-        print("=" * 60)
-        print(f"  Camera Rendering:    {'✓ PASS' if camera_ok else '✗ FAIL'}")
-        print(f"  Ball Detection:      {'✓ PASS' if balls_ok else '✗ FAIL'}")
-        print(f"  Obstacle Detection:  {'✓ PASS' if obstacles_ok else '✗ FAIL'}")
-        print(f"  Basket Detection:    {'✓ PASS' if basket_ok else '✗ FAIL'}")
+        print(f"RESULTS: {passed} passed, {failed} failed")
         print("=" * 60)
         
-        if camera_ok and balls_ok:
-            print("\n✓ Phase 2 validation complete!")
+        if failed == 0:
+            print("\nPhase 2 validation complete!")
             print("Perception pipeline working in simulation.")
-        else:
-            print("\n⚠ Some tests failed. Check output above.")
         
-        print("\nPress Ctrl+C to exit...")
+        if not headless:
+            print("\nPress Ctrl+C to exit...")
+            while True:
+                sim.step()
         
-        # Keep simulation running
-        while True:
-            sim.step()
-            
+        return 0 if failed == 0 else 1
+    
     except KeyboardInterrupt:
         print("\n\nShutting down...")
+        return 1
     finally:
-        cv2.destroyAllWindows()
+        if not headless:
+            cv2.destroyAllWindows()
         sim.close()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Phase 2 perception validation')
+    parser.add_argument('--headless', action='store_true',
+                        help='Run without GUI (for CI / automated testing)')
+    args = parser.parse_args()
+    sys.exit(main(headless=args.headless))

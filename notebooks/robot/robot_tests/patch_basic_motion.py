@@ -1,7 +1,13 @@
 import json
+import os
+
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
 
 def patch_basic_motion():
-    path = "/workspace/itq-bottle-cap-collector/basic_motion/basic_motion.ipynb"
+    path = os.path.join(project_root, "basic_motion", "basic_motion.ipynb")
     print(f"Patching {path}...")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)

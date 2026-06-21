@@ -160,7 +160,7 @@ class MockBasketDetector:
     
     def __init__(self, config=None):
         self.config = config or {}
-        self.test_basket = None
+        self.test_basket = {'basket_found': False}
         self.calibrated = False
         
     def detect(self, frame):
@@ -191,6 +191,8 @@ class MockObstacleDetector:
             'boundary_detected': self.test_boundary,
             'obstacle_detected': self.test_obstacle,
             'boundary_side': 'left' if self.test_boundary else None,
+            'priority': 'boundary' if self.test_boundary else ('obstacle' if self.test_obstacle else None),
+            'turn_direction': 'reverse' if self.test_boundary else None,
         }
         
     def set_test_boundary(self, detected):
@@ -274,3 +276,42 @@ class MockWorldMap:
     def set_test_blind_spots(self, spots):
         """Set test blind spots."""
         self.blind_spots = spots
+
+    def register_ball_from_detection(self, ball, pose, camera_pan_deg=0):
+        """Register a ball from a detection tuple and current pose."""
+        if pose is None:
+            return None
+        color, (cx, cy), distance, area = ball
+        x = pose[0] + (distance / 100.0) * (1 if cx >= 0 else 0)
+        y = pose[1]
+        return self.register_ball(x, y, source='camera')
+
+    def get_nearest_blind_spot(self, pose):
+        """Get nearest unvisited blind spot."""
+        if pose is None or not self.blind_spots:
+            return None
+        x, y, _ = pose
+        nearest = None
+        min_dist = float('inf')
+        for spot in self.blind_spots:
+            dist = ((spot[0] - x)**2 + (spot[1] - y)**2)**0.5
+            if dist < min_dist:
+                min_dist = dist
+                nearest = spot
+        return nearest
+
+    def mark_unreachable(self, ball_id):
+        """Mark a ball as unreachable."""
+        for ball in self.balls:
+            if ball['id'] == ball_id:
+                ball['unreachable'] = True
+                return True
+        return False
+
+    def get_ball_count(self):
+        """Return (total, collected, remaining, unreachable) counts."""
+        total = len(self.balls)
+        collected = sum(1 for b in self.balls if b.get('collected'))
+        unreachable = sum(1 for b in self.balls if b.get('unreachable'))
+        remaining = total - collected - unreachable
+        return (total, collected, remaining, unreachable)

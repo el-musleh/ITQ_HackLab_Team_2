@@ -54,10 +54,14 @@ class TestStateTransitions:
     
     def test_idle_to_wandering(self):
         """Test IDLE -> WANDERING on successful initialization."""
-        sm, mocks = create_test_state_machine()
+        config = {'state_machine': {'timeouts': {IDLE: 0.1}}}
+        sm, mocks = create_test_state_machine(config)
         
-        # Camera should initialize successfully
+        # Camera not yet initialized; IDLE state will call initialize()
         mocks['camera'].initialized = False
+        
+        # Wait for IDLE timeout
+        time.sleep(0.15)
         
         # Run until WANDERING or timeout
         success = run_until_state(sm, WANDERING, max_ticks=200)
@@ -65,7 +69,8 @@ class TestStateTransitions:
         
     def test_wandering_to_check_for_ball(self):
         """Test WANDERING -> CHECK_FOR_BALL after sweep."""
-        sm, mocks = create_test_state_machine()
+        config = {'state_machine': {'timeouts': {WANDERING: 1.0}}}
+        sm, mocks = create_test_state_machine(config)
         
         # Start in WANDERING
         sm.state = WANDERING
@@ -103,8 +108,11 @@ class TestStateTransitions:
         # No balls detected
         mocks['ball_detector'].set_test_balls([])
         
-        # Run a few ticks
-        run_n_ticks(sm, 10)
+        # Register a known ball so world_map.has_known_balls() returns True
+        mocks['world_map'].register_ball(0.5, 0.5)
+        
+        # Run one tick — should transition to BALLS_LEFT
+        sm.tick()
         
         assert sm.state == BALLS_LEFT, f"Expected BALLS_LEFT, got {sm.state}"
 

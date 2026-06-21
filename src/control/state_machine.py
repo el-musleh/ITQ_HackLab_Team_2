@@ -112,6 +112,7 @@ class StateMachine:
         self.safety_clear_time = None
         self.safety_action = None
         self.safety_timer = 0.0
+        self.safety_pause_start = None
 
         self.recovery_origin = None
         self.recovery_retry_count = 0
@@ -204,6 +205,7 @@ class StateMachine:
             if self.safety_action is None:
                 self.safety_action = obs.get('turn_direction', 'reverse')
                 self.safety_timer = now + 0.5
+                self.safety_pause_start = now
                 self._log(f'Safety: {obs["priority"]} -> {self.safety_action}')
             self._execute_safety_action(self.safety_action)
             return True
@@ -217,6 +219,9 @@ class StateMachine:
                 self.safety_clear_time = None
                 self.safety_action = None
                 self.chassis.stop()
+                if hasattr(self, 'safety_pause_start') and self.safety_pause_start:
+                    self.state_start_time += now - self.safety_pause_start
+                    self.safety_pause_start = None
             else:
                 self._execute_safety_action(self.safety_action)
             return True
@@ -346,7 +351,8 @@ class StateMachine:
             return BALLS_LEFT
         balls = self.ball_detector.detect(frame)
         if balls:
-            self.current_ball = self._ball_to_dict(balls[0])
+            balls_sorted = sorted(balls, key=lambda b: b[2])
+            self.current_ball = self._ball_to_dict(balls_sorted[0])
             return COLLECT_BALL
         if self.world_map.has_known_balls():
             return BALLS_LEFT
@@ -382,6 +388,7 @@ class StateMachine:
             self.collect_sub_state = next_sub
             self.collect_sub_start = time.time()
             self.pid.reset()
+            self.state_data.clear()
 
         return COLLECT_BALL
 
@@ -415,6 +422,8 @@ class StateMachine:
             return CS_PICKUP
 
         left, right = self.pid.update(cx, cy, self.frame_width, self.frame_height)
+        left = max(-1.0, min(1.0, left))
+        right = max(-1.0, min(1.0, right))
         left *= self.approach_speed
         right *= self.approach_speed
         self._set_motors(left, right)
@@ -437,9 +446,12 @@ class StateMachine:
             (1.8, self.arm.gripper_close, 0.5),
             (2.3, lambda: self.arm.move_to_pose(self.arm.pose_carry), 1.5),
         ]
-        for start, action, duration in steps:
+        last_step = self.state_data.get('last_pickup_step', -1)
+        for i, (start, action, duration) in enumerate(steps):
             if start <= elapsed < start + duration:
-                action()
+                if last_step != i:
+                    action()
+                    self.state_data['last_pickup_step'] = i
                 return CS_PICKUP
         return CS_GOTO_BASKET
 
@@ -471,6 +483,8 @@ class StateMachine:
             return CS_DEPOSIT
 
         left, right = self.pid.update(cx, cy, self.frame_width, self.frame_height)
+        left = max(-1.0, min(1.0, left))
+        right = max(-1.0, min(1.0, right))
         left *= self.approach_speed * 0.8
         right *= self.approach_speed * 0.8
         self._set_motors(left, right)
@@ -483,9 +497,12 @@ class StateMachine:
             (1.5, self.arm.gripper_open, 0.5),
             (2.0, lambda: self.arm.move_to_pose(self.arm.pose_home), 2.0),
         ]
-        for start, action, duration in steps:
+        last_step = self.state_data.get('last_deposit_step', -1)
+        for i, (start, action, duration) in enumerate(steps):
             if start <= elapsed < start + duration:
-                action()
+                if last_step != i:
+                    action()
+                    self.state_data['last_deposit_step'] = i
                 return CS_DEPOSIT
         if self.current_ball and self.current_ball.get('world_id'):
             self.world_map.mark_collected(self.current_ball['world_id'])
@@ -598,6 +615,7 @@ class StateMachine:
             else:
                 origin = self.recovery_origin
                 self.recovery_origin = None
+                self.recovery_retry_count = 0
                 return origin
 
         return RECOVERY

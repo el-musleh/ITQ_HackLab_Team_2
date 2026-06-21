@@ -16,15 +16,7 @@ from src.simulation.sim_hardware import create_sim_hardware
 from src.perception.ball_detector import BallDetector
 from src.perception.obstacle_detector import ObstacleDetector
 from src.perception.basket_detector import BasketDetector
-
-
-def load_config():
-    config_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'config.yaml'
-    )
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+from src.utils import load_config
 
 
 def main():

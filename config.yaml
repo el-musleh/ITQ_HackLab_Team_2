@@ -85,3 +85,16 @@ servos:
 serial:
   port: /dev/ttyTHS1
   baudrate: 1000000
+
+# Simulation (PyBullet) settings. Only used by src/simulation/.
+simulation:
+  gui: true                # Show PyBullet GUI window (false for headless/CI)
+  real_time: true          # Step at wall-clock real time
+  locomotion_mode: velocity  # 'velocity' (stable, default) | 'wheels' (realistic)
+  ball_spawn_seed: 42      # RNG seed for reproducible ball positions
+  camera_fov: 160          # Simulated camera field of view (degrees)
+  renderer: auto           # 'auto' | 'opengl' | 'tiny' (fallback for headless)
+  num_balls: 22            # Default ball count for run_simulation.py
+  max_duration_sec: 300    # Default run timeout for run_simulation.py
+  steps_per_tick: 12       # Physics steps per state-machine tick
+  show_visualization: true # OpenCV debug window in run_simulation.py

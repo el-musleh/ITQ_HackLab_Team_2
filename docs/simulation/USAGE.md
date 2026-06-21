@@ -11,8 +11,17 @@ The simulation provides a virtual testing environment that mirrors the real chal
 ### Running a Simulation
 
 ```bash
-# From project root
-python src/simulation/test_basic_motion.py
+# From project root — GUI mode (requires display)
+python3 src/simulation/test_basic_motion.py
+
+# Headless mode (no GUI, for CI / automated testing)
+python3 src/simulation/test_basic_motion.py --headless
+
+# Perception tests
+python3 src/simulation/test_perception.py --headless
+
+# Full autonomous run
+python3 src/simulation/run_simulation.py --headless --duration 60 --balls 5
 ```
 
 ### Switching Between Simulation and Hardware
@@ -23,20 +32,20 @@ The code uses the same interface for both simulated and real hardware:
 ```python
 from src.simulation.sim_core import SimulationCore
 from src.simulation.sim_hardware import create_sim_hardware
-import yaml
+from src.utils import load_config
 
 # Load config
-config = yaml.safe_load(open('config.yaml'))
+config = load_config()
 
 # Initialize simulation
-sim = SimulationCore(gui=True, real_time=True)
+sim = SimulationCore(gui=True, real_time=True, config=config)
 sim.initialize()
 sim.load_arena()
 robot_id = sim.load_robot()
 sim.spawn_balls()
 
-# Create hardware interfaces
-chassis, arm, camera = create_sim_hardware(robot_id, config)
+# Create hardware interfaces (pass sim so arm sequences step physics)
+chassis, arm, camera = create_sim_hardware(robot_id, config, sim=sim)
 
 # Use hardware (same API as real hardware)
 chassis.forward(speed=0.2)
@@ -46,18 +55,18 @@ arm.pickup_sequence()
 
 **Hardware Mode:**
 ```python
-from src.hardware.chassis import Chassis
-from src.hardware.arm import Arm
-from src.hardware.camera import Camera
-import yaml
+from src.hardware.chassis import ChassisController
+from src.hardware.arm import ArmController
+from src.hardware.camera import CameraController
+from src.utils import load_config
 
 # Load config
-config = yaml.safe_load(open('config.yaml'))
+config = load_config()
 
 # Initialize real hardware
-chassis = Chassis()
-arm = Arm(config)
-camera = Camera()
+chassis = ChassisController()
+arm = ArmController(config)
+camera = CameraController()
 
 # Use hardware (same API as simulation)
 chassis.forward(speed=0.2)
@@ -84,15 +93,18 @@ chassis.set_motors(left=0.2, right=0.2)  # Differential drive
 ### Arm Control
 
 ```python
-# Predefined poses
-arm.move_to_pose('home')      # Home position
-arm.move_to_pose('pickup')    # Pickup position
-arm.move_to_pose('carry')     # Carry position
-arm.move_to_pose('deposit')   # Deposit position
+# Predefined poses (pass pose lists for hardware compatibility)
+arm.move_to_pose(arm.pose_home)      # Home position
+arm.move_to_pose(arm.pose_pickup)    # Pickup position
+arm.move_to_pose(arm.pose_carry)     # Carry position
+arm.move_to_pose(arm.pose_deposit)   # Deposit position
+
+# String names also work in simulation
+arm.move_to_pose('home')
 
 # Sequences
-arm.pickup_sequence()   # Full pickup: open → lower → close → lift
-arm.deposit_sequence()  # Full deposit: position → open → home
+arm.pickup_sequence()   # Full pickup: open -> lower -> close -> lift
+arm.deposit_sequence()  # Full deposit: position -> open -> home
 
 # Manual control
 arm.set_joint_angles([0, -40, -60, 0])  # [base, shoulder, elbow, gripper]
@@ -335,8 +347,8 @@ sim.close()
 
 ## Next Steps
 
-- **Phase 1 Complete**: You can now test basic robot motion
-- **Phase 2**: Add camera rendering and perception testing
-- **Phase 3**: Integrate full state machine and autonomous loop
+- **Phase 1**: Basic robot motion — tests in progress
+- **Phase 2**: Camera rendering and perception testing — tests in progress
+- **Phase 3**: Full state machine and autonomous loop — tests in progress
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for implementation details.

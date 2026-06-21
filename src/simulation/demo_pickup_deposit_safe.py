@@ -22,6 +22,7 @@ from src.perception.basket_detector import BasketDetector
 from src.perception.obstacle_detector import ObstacleDetector
 from src.control.state_machine import StateMachine
 from src.control.world_map import WorldMap
+from src.utils import load_config
 
 # Setup logging
 logging.basicConfig(
@@ -33,15 +34,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-
-def load_config():
-    config_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'config.yaml'
-    )
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
 
 
 def check_robot_stability(sim, robot_id):

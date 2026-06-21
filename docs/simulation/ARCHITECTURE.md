@@ -229,26 +229,43 @@ def set_tilt(angle: float) -> None
 ### Factory Pattern
 
 ```python
-# config.yaml
-simulation:
-  enabled: true
+from src.utils import load_config
+config = load_config()
 
-# main.py
-if config['simulation']['enabled']:
-    from src.simulation.sim_hardware import create_sim_hardware
-    chassis, arm, camera = create_sim_hardware(robot_id, config)
-else:
-    from src.hardware.chassis import Chassis
-    from src.hardware.arm import Arm
-    from src.hardware.camera import Camera
-    chassis = Chassis()
-    arm = Arm(config)
-    camera = Camera()
+# Simulation branch
+from src.simulation import SimulationCore, create_sim_hardware
+sim = SimulationCore(gui=False, config=config)
+sim.initialize()
+sim.load_arena()
+robot_id = sim.load_robot()
+sim.spawn_balls()
+# Pass sim= so arm sequences step physics and grasp balls
+chassis, arm, camera = create_sim_hardware(robot_id, config, sim=sim)
+
+# Real hardware branch
+# from src.hardware.chassis import ChassisController
+# from src.hardware.arm import ArmController
+# from src.hardware.camera import CameraController
+# chassis = ChassisController()
+# arm = ArmController(config)
+# camera = CameraController()
 ```
+
+`load_config()` lives in `src/utils` and is the single source of truth for
+reading `config.yaml` (previously duplicated across 7 files).
 
 ## Physics Simulation
 
-### Differential Drive Model
+### Locomotion Modes
+
+The chassis supports two locomotion modes, selected via `config.yaml`:
+`simulation.locomotion_mode` (default `velocity`).
+
+#### `velocity` mode (default, stable)
+
+Sets the robot base velocity directly. Fast, deterministic, and decoupled
+from wheel friction — the same behavior the original simulation shipped
+with.
 
 ```python
 # Input: left_speed, right_speed (normalized -1 to 1)
@@ -268,6 +285,53 @@ p.resetBaseVelocity(
 ```
 
 **Scale Factor**: 2.0 (tuned to match real robot speed)
+
+#### `wheels` mode (realistic)
+
+Drives the four wheel joints via `p.VELOCITY_CONTROL`, so motion emerges
+from friction and contact rather than being teleported. Wheel joints and
+sides are discovered from the URDF at runtime (`wheel_fl_joint`,
+`wheel_rr_joint`, etc.). A `wheel_direction_sign` (-1.0 by default)
+compensates for the jetank.urdf wheel axis orientation so `forward()` still
+moves the robot forward.
+
+```python
+left_ang  = (left_speed  * speed_scale) / wheel_radius * wheel_direction_sign
+right_ang = (right_speed * speed_scale) / wheel_radius * wheel_direction_sign
+for idx in wheel_left:  p.setJointMotorControl2(robot, idx, p.VELOCITY_CONTROL,
+                                                targetVelocity=left_ang,  force=max_force)
+for idx in wheel_right: p.setJointMotorControl2(robot, idx, p.VELOCITY_CONTROL,
+                                                targetVelocity=right_ang, force=max_force)
+```
+
+### Joint Discovery
+
+Joint indices are discovered from the URDF at runtime by matching joint
+names to logical roles, instead of being hardcoded:
+
+```python
+_JOINT_NAME_ROLES = {
+    'arm_base_joint': 'base',
+    'arm_shoulder_joint': 'shoulder',
+    'arm_elbow_joint': 'elbow',
+    'arm_wrist_joint': 'wrist',
+    'claw_joint': 'claw',
+}
+```
+
+`SimulationCore.get_joint_map()` returns the resolved `{role: index}` map
+and `get_wheel_joint_indices()` returns the wheel joints. `ArmController`
+and `ChassisController` accept these maps and fall back to hardcoded
+defaults for backwards compatibility.
+
+### Ball Grasping
+
+`SimulationCore.attach_ball_to_gripper(ball_id)` creates a `JOINT_FIXED`
+constraint between the gripper link and a ball, so pickup is physical
+rather than cosmetic. `detach_ball()` removes it (called automatically by
+`deposit_sequence`). The arm's grasp helper first tries contact detection,
+then falls back to proximity (nearest ball within 0.08 m of the gripper
+link) so grasping works without precise gripper-geometry tuning.
 
 ### Collision Detection
 

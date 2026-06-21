@@ -12,6 +12,7 @@ Stop:  Ctrl+C
 import cv2
 import base64
 import json
+import os
 import signal
 import sys
 import threading
@@ -100,7 +101,7 @@ BOX_HSV_UPPER  = (180, 80, 210)   # any hue, low saturation, not white
 BOX_MIN_AREA   = 500              # ignore tiny blobs
 BOX_DROP_AREA  = 6000             # area px^2 -> "close enough, deposit now"
 
-ROBOFLOW_API_KEY     = "Ub1KVwtGHHdLLKRzoxdG"
+ROBOFLOW_API_KEY     = os.environ.get("ROBOFLOW_API_KEY", "")
 ROBOFLOW_API_URL     = "https://serverless.roboflow.com/kais-workspace-stbmo/workflows/detect-count-and-visualize-3"
 CONFIDENCE_THRESHOLD = 0.50   # lowered from 0.80 -- easier to detect
 TARGET_CLASS         = "bottle cap"
@@ -291,6 +292,7 @@ def execute():
                         left_spd  = -SCAN_TURN_SPEED
                         right_spd =  SCAN_TURN_SPEED
                     else:
+                        # JETANK motor convention: negative values = forward
                         left_spd  = -APPROACH_SPEED
                         right_spd = -APPROACH_SPEED
             else:
@@ -386,7 +388,8 @@ def _inference_loop():
                         _lock_lost = 0
                         best = None
                     else:
-                        best = _cap_det  # hold last known position briefly
+                        with _cap_lock:
+                            best = _cap_det  # hold last known position briefly
 
             with _cap_lock:
                 _cap_det = best
@@ -421,6 +424,11 @@ signal.signal(signal.SIGTERM, lambda s, f: (_shutdown(), sys.exit(0)))
 # -- Entry point -----------------------------------------------------------
 if __name__ == '__main__':
     import sys as _sys
+
+    if not ROBOFLOW_API_KEY:
+        print('ERROR: ROBOFLOW_API_KEY environment variable not set.')
+        print('Export it with: export ROBOFLOW_API_KEY="your-key-here"')
+        _sys.exit(1)
 
     if '--test' in _sys.argv:
         # One-shot inference: print full raw API response and exit.

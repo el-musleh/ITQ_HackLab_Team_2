@@ -418,8 +418,11 @@ arm_poses:
 
 1. **Check sys.path:**
 ```python
-import sys
-project_root = '/home/steve/Notebooks/Projects/AI & Robotics Hackathon Berlin/ITQ_HackLab_Team_2'
+import sys, os
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 ```
@@ -470,7 +473,11 @@ python -c "import yaml; yaml.safe_load(open('config.yaml'))"
 2. **Verify file path:**
 ```python
 import os
-config_path = '/home/steve/Notebooks/Projects/AI & Robotics Hackathon Berlin/ITQ_HackLab_Team_2/config.yaml'
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
+config_path = os.path.join(project_root, 'config.yaml')
 print(f"Exists: {os.path.exists(config_path)}")
 ```
 

@@ -19,7 +19,7 @@ def create_test_state_machine(config=None, logger=None):
     Returns:
         (state_machine, mocks) tuple where mocks is a dict of all mock objects
     """
-    from control.state_machine import StateMachine
+    from src.control.state_machine import StateMachine
     
     config = config or {}
     

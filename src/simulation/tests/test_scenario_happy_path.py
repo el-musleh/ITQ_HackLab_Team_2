@@ -1,5 +1,6 @@
 """Test scenario: Happy path - single ball collection."""
 
+import argparse
 import sys
 import os
 import time
@@ -25,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main(headless=False):
     """Test happy path: spawn 1 ball, collect it, deposit it."""
     logger.info("="*60)
     logger.info("TEST SCENARIO: HAPPY PATH - Single Ball Collection")
@@ -48,18 +49,19 @@ def main():
     
     # Initialize simulation
     logger.info("Initializing simulation...")
-    sim = SimulationCore(gui=True, real_time=True)
+    sim = SimulationCore(gui=not headless, real_time=not headless, config=config)
     sim.initialize()
-    
+    sim.load_arena()
+
     # Load robot at start corner
     robot_id = sim.load_robot(start_pos=[0, 0, 0.15])
-    
+
     # Spawn only 1 ball near the robot for easy collection
     logger.info("Spawning 1 ball near robot...")
     sim.spawn_balls(num_balls=1)
-    
-    # Create hardware
-    chassis, arm, camera = create_sim_hardware(robot_id, config)
+
+    # Create hardware (pass sim so arm sequences step physics & grasp balls)
+    chassis, arm, camera = create_sim_hardware(robot_id, config, sim=sim)
     ball_detector = BallDetector(config)
     basket_detector = BasketDetector(config)
     obstacle_detector = ObstacleDetector(config)
@@ -166,5 +168,9 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    parser = argparse.ArgumentParser(description='Happy path scenario test')
+    parser.add_argument('--headless', action='store_true',
+                        help='Run without GUI (for CI / automated testing)')
+    args = parser.parse_args()
+    exit_code = main(headless=args.headless)
     sys.exit(exit_code)

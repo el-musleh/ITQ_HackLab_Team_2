@@ -22,6 +22,7 @@ python src/simulation/test_basic_motion.py
 - ✅ Physics simulation (240 Hz)
 - ✅ Collision detection
 - ✅ Hardware abstraction layer
+- ✅ Joint indices discovered from URDF at runtime (no hardcoded indices)
 
 **Test Results:**
 ```
@@ -33,19 +34,20 @@ python src/simulation/test_basic_motion.py
 ✓ Execute deposit sequence
 ```
 
-### Phase 2: Camera & Vision (TODO)
+### Phase 2: Camera & Vision ✅ COMPLETE
 
-- [ ] Camera rendering from robot perspective
-- [ ] Synthetic image generation
-- [ ] Perception pipeline testing
-- [ ] Ball/obstacle/basket detection
+- ✅ Camera rendering from robot perspective
+- ✅ Synthetic image generation (RGB + BGR for OpenCV)
+- ✅ Perception pipeline testing
+- ✅ Ball/obstacle/basket detection
+- ✅ Headless renderer fallback (OpenGL → Tiny)
 
-### Phase 3: Full System (TODO)
+### Phase 3: Full System ✅ COMPLETE
 
-- [ ] State machine integration
-- [ ] PID controller testing
-- [ ] Autonomous navigation
-- [ ] Performance benchmarking
+- ✅ State machine integration (real `StateMachine` API via `tick()`)
+- ✅ PID controller testing
+- ✅ Autonomous navigation
+- ✅ Headless pytest tests in `tests/`
 
 ## Files
 
@@ -90,14 +92,17 @@ arm.pickup_sequence()
 ### Run Tests
 
 ```bash
-# Phase 1: Basic motion
+# Phase 1: Basic motion (GUI)
 python src/simulation/test_basic_motion.py
 
-# Phase 2: Perception (coming soon)
-# python src/simulation/test_perception.py
+# Phase 2: Perception (GUI)
+python src/simulation/test_perception.py
 
-# Phase 3: Full system (coming soon)
-# python src/simulation/run_simulation.py
+# Phase 3: Full autonomous run (GUI)
+python src/simulation/run_simulation.py
+
+# Headless pytest suite (no GUI, safe for CI)
+python -m pytest tests/ -m simulation
 ```
 
 ## Documentation
@@ -125,8 +130,26 @@ The simulation provides drop-in replacements for real hardware:
 ## Next Steps
 
 1. ✅ **Phase 1 Complete**: Basic physics working
-2. **Phase 2**: Add camera rendering (see plan)
-3. **Phase 3**: Integrate state machine and perception
+2. ✅ **Phase 2 Complete**: Camera rendering + perception
+3. ✅ **Phase 3 Complete**: State machine + perception integration
+4. Tune `locomotion_mode: wheels` and ball-grasp parameters for higher realism
+
+## Configuration
+
+Simulation behavior is controlled by the `simulation:` section of `config.yaml`:
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `gui` | `true` | Show PyBullet GUI window (set `false` for headless/CI) |
+| `real_time` | `true` | Step at wall-clock real time |
+| `locomotion_mode` | `velocity` | `velocity` (stable, default) or `wheels` (realistic, drives wheel joints) |
+| `ball_spawn_seed` | `42` | RNG seed for reproducible ball positions |
+| `camera_fov` | `160` | Simulated camera field of view (degrees) |
+| `renderer` | `auto` | `auto` / `opengl` / `tiny` (fallback for headless) |
+| `num_balls` | `22` | Default ball count for `run_simulation.py` |
+| `max_duration_sec` | `300` | Default run timeout for `run_simulation.py` |
+| `steps_per_tick` | `12` | Physics steps per state-machine tick |
+| `show_visualization` | `true` | OpenCV debug window in `run_simulation.py` |
 
 ## Requirements
 

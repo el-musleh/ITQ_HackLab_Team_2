@@ -1,7 +1,13 @@
 import json
+import os
+
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
 
 def patch_use_model():
-    path = "/workspace/itq-bottle-cap-collector/use_model.ipynb"
+    path = os.path.join(project_root, "use_model.ipynb")
     print(f"Patching {path}...")
     with open(path, "r", encoding="utf-8") as f:
         nb = json.load(f)

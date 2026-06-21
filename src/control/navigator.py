@@ -13,15 +13,19 @@ from src.control.pid import DualPIDController
 class Navigator:
     """Handles robot navigation and motion control."""
     
-    def __init__(self, robot, config=None):
+    def __init__(self, robot=None, config=None, chassis=None):
         """
         Initialize navigator.
         
         Args:
-            robot: Robot instance (with left_motor, right_motor)
+            robot: Robot instance (with left_motor, right_motor). Deprecated;
+                prefer passing ``chassis`` instead.
             config: Optional configuration dict
+            chassis: ChassisController instance with set_motors(left, right).
+                If provided, used instead of raw robot motor access.
         """
         self.robot = robot
+        self.chassis = chassis
         
         # Load config
         if config:
@@ -89,10 +93,17 @@ class Navigator:
         else:
             return False
     
+    def _set_motors(self, left, right):
+        """Apply motor speeds via chassis if available, else raw robot access."""
+        if self.chassis is not None:
+            self.chassis.set_motors(left, right)
+        else:
+            self.robot.left_motor.value = left
+            self.robot.right_motor.value = right
+    
     def stop(self):
         """Stop all motors."""
-        self.robot.left_motor.value = 0.0
-        self.robot.right_motor.value = 0.0
+        self._set_motors(0.0, 0.0)
         self.pid.reset()
         return True
     
@@ -100,8 +111,7 @@ class Navigator:
         """Rotate in place to search for balls."""
         # Slow rotation
         speed = self.search_speed
-        self.robot.left_motor.value = -speed
-        self.robot.right_motor.value = speed
+        self._set_motors(-speed, speed)
         return True
     
     def approach_target(self, target):
@@ -138,8 +148,7 @@ class Navigator:
         right = max(-self.max_speed, min(self.max_speed, right))
         
         # Apply to motors
-        self.robot.left_motor.value = left
-        self.robot.right_motor.value = right
+        self._set_motors(left, right)
         
         return True
     
@@ -173,8 +182,7 @@ class Navigator:
         right = max(-self.max_speed, min(self.max_speed, right))
         
         # Apply to motors
-        self.robot.left_motor.value = left
-        self.robot.right_motor.value = right
+        self._set_motors(left, right)
         
         return True
     
@@ -197,16 +205,13 @@ class Navigator:
         
         if direction == 'reverse':
             # Reverse
-            self.robot.left_motor.value = -speed
-            self.robot.right_motor.value = -speed
+            self._set_motors(-speed, -speed)
         elif direction == 'left':
             # Turn left (reverse right motor more)
-            self.robot.left_motor.value = -speed * 0.5
-            self.robot.right_motor.value = -speed
+            self._set_motors(-speed * 0.5, -speed)
         elif direction == 'right':
             # Turn right (reverse left motor more)
-            self.robot.left_motor.value = -speed
-            self.robot.right_motor.value = -speed * 0.5
+            self._set_motors(-speed, -speed * 0.5)
         
         return True
     
@@ -233,8 +238,7 @@ class Navigator:
             speed = self.approach_speed
         
         speed = min(speed, self.max_speed)
-        self.robot.left_motor.value = speed
-        self.robot.right_motor.value = speed
+        self._set_motors(speed, speed)
         return True
     
     def drive_backward(self, speed=None):
@@ -243,8 +247,7 @@ class Navigator:
             speed = self.approach_speed
         
         speed = min(speed, self.max_speed)
-        self.robot.left_motor.value = -speed
-        self.robot.right_motor.value = -speed
+        self._set_motors(-speed, -speed)
         return True
     
     def turn_left(self, speed=None):
@@ -252,8 +255,7 @@ class Navigator:
         if speed is None:
             speed = self.search_speed
         
-        self.robot.left_motor.value = -speed
-        self.robot.right_motor.value = speed
+        self._set_motors(-speed, speed)
         return True
     
     def turn_right(self, speed=None):
@@ -261,6 +263,5 @@ class Navigator:
         if speed is None:
             speed = self.search_speed
         
-        self.robot.left_motor.value = speed
-        self.robot.right_motor.value = -speed
+        self._set_motors(speed, -speed)
         return True

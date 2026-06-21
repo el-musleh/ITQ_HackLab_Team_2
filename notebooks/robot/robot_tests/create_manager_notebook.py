@@ -1,6 +1,11 @@
 import json
 import os
 
+# Auto-detect project root by searching for config.yaml marker
+project_root = os.getcwd()
+while not os.path.exists(os.path.join(project_root, 'config.yaml')) and project_root != '/':
+    project_root = os.path.dirname(project_root)
+
 def build_notebook():
     notebook = {
      "cells": [
@@ -217,7 +222,7 @@ def build_notebook():
      "nbformat_minor": 4
     }
     
-    dest_path = "/workspace/itq-bottle-cap-collector/robot_manager.ipynb"
+    dest_path = os.path.join(project_root, "robot_manager.ipynb")
     with open(dest_path, "w", encoding="utf-8") as f:
         json.dump(notebook, f, indent=1, ensure_ascii=False)
     print(f"Created manager notebook at {dest_path}")
