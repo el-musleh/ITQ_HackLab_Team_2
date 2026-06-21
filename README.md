@@ -237,6 +237,8 @@ Camera Feed
 
 The robot's brain is a single reusable state machine in `src/control/state_machine.py` that runs on both the real robot and the simulator.
 
+![State Machine Diagram](docs/state_machine.jpg)
+
 Main flow:
 `IDLE → WANDERING → CHECK_FOR_BALL → COLLECT_BALL → CHECK_FOR_BALL → BALLS_LEFT → BLIND_SPOT → END`
 
@@ -251,7 +253,7 @@ Main flow:
 
 A proactive **SafetyMonitor** runs before every state handler, checking for motor stall (StuckDetector), vision blackout (DarkFrameDetector), and arm link collisions (ArmCollisionDetector). Issues trigger an immediate transition to RECOVERY with a tailored response.
 
-See `docs/state-machine.md` for the full diagram and tuning parameters.
+See `docs/state-machine.md` for the full diagram and tuning parameters, and `docs/state_machine.jpg` for the visual overview.
 
 ---
 

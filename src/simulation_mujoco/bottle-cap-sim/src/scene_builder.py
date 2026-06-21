@@ -10,7 +10,7 @@ from src.config import (
     ARENA_X_MIN, ARENA_X_MAX, ARENA_Y_MIN, ARENA_Y_MAX,
     ROBOT_WIDTH, ROBOT_LENGTH, ROBOT_HEIGHT, ROBOT_START,
     OBSTACLE_1, OBSTACLE_2,
-    BASKET_X, BASKET_Y, BASKET_INNER_SIZE, BASKET_WALL_THICKNESS, BASKET_WALL_HEIGHT,
+    BASKET_X, BASKET_Y, BASKET_RADIUS, BASKET_HEIGHT,
     NUM_CAPS, CAP_DIAMETER_MIN, CAP_DIAMETER_MAX, CAP_THICKNESS,
     CAP_COLORS, CAP_RGBA,
     ASSETS_DIR, ARENA_XML_PATH,
@@ -48,13 +48,12 @@ def _place_caps(n: int, seed: int = 42) -> List[CapPlacement]:
     y_hi = ARENA_Y_MAX - wall_margin
 
     pad = 0.05
-    basket_half = (BASKET_INNER_SIZE / 2) + BASKET_WALL_THICKNESS + pad
-    exclusions: List[Tuple[float, float, float, float]] = [
+    basket_excl_radius = BASKET_RADIUS + pad
+    exclusions_rect: List[Tuple[float, float, float, float]] = [
         (OBSTACLE_1.x, OBSTACLE_1.y,
          OBSTACLE_1.width / 2 + pad, OBSTACLE_1.length / 2 + pad),
         (OBSTACLE_2.x, OBSTACLE_2.y,
          OBSTACLE_2.width / 2 + pad, OBSTACLE_2.length / 2 + pad),
-        (BASKET_X, BASKET_Y, basket_half, basket_half),
         (ROBOT_START[0], ROBOT_START[1],
          ROBOT_WIDTH / 2 + pad, ROBOT_LENGTH / 2 + pad),
     ]
@@ -68,8 +67,11 @@ def _place_caps(n: int, seed: int = 42) -> List[CapPlacement]:
             y = rng.uniform(y_lo + radius, y_hi - radius)
             if any(
                 _circle_overlaps_rect(x, y, radius, ex, ey, ew, eh)
-                for ex, ey, ew, eh in exclusions
+                for ex, ey, ew, eh in exclusions_rect
             ):
+                continue
+            # Circular basket exclusion
+            if math.hypot(x - BASKET_X, y - BASKET_Y) < basket_excl_radius + radius:
                 continue
             if any(
                 math.hypot(x - c.x, y - c.y) < radius + c.radius + 0.012
@@ -238,8 +240,9 @@ def _build_xml(caps: List[CapPlacement]) -> str:
       f'size="{_fmt(tw, ay + tw, th)}" pos="{_fmt(-ax, 0.0, th)}" {yellow}/>', 2)
     L('')
 
-    # ── Crate obstacles (blue = small, green = large) ─────────────────────
-    L('<!-- Crate obstacles -->', 2)
+    # ── Crate obstacles with yellow tape on top ───────────────────────────
+    L('<!-- Crate obstacles with yellow tape -->', 2)
+    yellow = 'rgba="1.0 0.92 0.0 1"'
     for obs in [OBSTACLE_1, OBSTACLE_2]:
         hw, hl, hh = obs.width / 2, obs.length / 2, obs.height / 2
         r, g, b, a = obs.rgba
@@ -247,34 +250,23 @@ def _build_xml(caps: List[CapPlacement]) -> str:
           f'size="{_fmt(hw, hl, hh)}" '
           f'pos="{_fmt(obs.x, obs.y, hh)}" '
           f'rgba="{_rgba(r, g, b, a)}"/>', 2)
+        # Yellow tape strip on top (slightly larger footprint, thin)
+        tape_h = 0.01  # half-height of tape (2 cm thick)
+        tape_z = hh + tape_h
+        L(f'<geom name="{obs.name}_tape" type="box" '
+          f'size="{_fmt(hw + 0.005, hl + 0.005, tape_h)}" '
+          f'pos="{_fmt(obs.x, obs.y, tape_z)}" {yellow}/>', 2)
     L('')
 
     # ── Gray collection basket (centred in arena) ──────────────────────────
     L('<!-- Gray collection basket (centre of arena) -->', 2)
     bx, by = BASKET_X, BASKET_Y
-    bi  = BASKET_INNER_SIZE / 2          # inner half-size  0.10
-    hwt = BASKET_WALL_THICKNESS / 2      # wall half-thickness 0.01
-    hwh = BASKET_WALL_HEIGHT / 2         # wall half-height 0.04
-    fl_h = hwt                           # floor panel half-height = 0.01
-    wall_z = fl_h * 2 + hwh             # wall centre z = 0.06
-
+    bh = BASKET_HEIGHT / 2
     gray = 'rgba="0.48 0.48 0.48 1"'
 
-    L(f'<geom name="basket_floor" type="box" '
-      f'size="{_fmt(bi + hwt, bi + hwt, fl_h)}" '
-      f'pos="{_fmt(bx, by, fl_h)}" {gray}/>', 2)
-    L(f'<geom name="basket_wall_n" type="box" '
-      f'size="{_fmt(bi + hwt, hwt, hwh)}" '
-      f'pos="{_fmt(bx, by + bi + hwt, wall_z)}" {gray}/>', 2)
-    L(f'<geom name="basket_wall_s" type="box" '
-      f'size="{_fmt(bi + hwt, hwt, hwh)}" '
-      f'pos="{_fmt(bx, by - bi - hwt, wall_z)}" {gray}/>', 2)
-    L(f'<geom name="basket_wall_e" type="box" '
-      f'size="{_fmt(hwt, bi, hwh)}" '
-      f'pos="{_fmt(bx + bi + hwt, by, wall_z)}" {gray}/>', 2)
-    L(f'<geom name="basket_wall_w" type="box" '
-      f'size="{_fmt(hwt, bi, hwh)}" '
-      f'pos="{_fmt(bx - bi - hwt, by, wall_z)}" {gray}/>', 2)
+    L(f'<geom name="basket" type="cylinder" '
+      f'size="{_fmt(BASKET_RADIUS, bh)}" '
+      f'pos="{_fmt(bx, by, bh)}" {gray}/>', 2)
     L('')
 
     # ── JETANK robot (visual digital twin) ────────────────────────────────
@@ -315,12 +307,15 @@ def _build_xml(caps: List[CapPlacement]) -> str:
           f'pos="{_fmt(seg_x, -(rw + 0.008), -(rh + 0.004))}" '
           f'rgba="0.13 0.13 0.13 1"/>', 3)
 
-    # Wheel hubs (front and rear, both sides)
+    # Wheel hubs (front and rear, both sides) — 7 cm diameter, 4 cm width per spec
+    _wheel_r = 0.035   # 3.5 cm radius → 7 cm diameter
+    _wheel_w = 0.020   # 2 cm half-length → 4 cm width (spec)
+    _wheel_z = _wheel_r - rh   # bottom of wheel at floor level
     for fx, flabel in [(rl, "f"), (-rl, "r")]:
         for hy, slabel in [(+(rw - 0.004), "l"), (-(rw - 0.004), "r")]:
             L(f'<geom name="hub_{flabel}{slabel}" type="cylinder" '
-              f'size="{_fmt(rh * 0.70, 0.017)}" '
-              f'pos="{_fmt(fx, hy, 0)}" '
+              f'size="{_fmt(_wheel_r, _wheel_w)}" '
+              f'pos="{_fmt(fx, hy, _wheel_z)}" '
               f'euler="{_fmt(1.5708, 0, 0)}" '
               f'rgba="0.20 0.20 0.20 1"/>', 3)
 

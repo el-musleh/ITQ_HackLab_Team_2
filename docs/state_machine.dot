@@ -1,0 +1,82 @@
+digraph StateMachine {
+    rankdir=TB;
+    fontname="Helvetica";
+    labelloc="t";
+    fontsize=24;
+    label="StateMachine — Autonomous Ball Collection FSM";
+    
+    node [fontname="Helvetica", fontsize=12, style=filled, shape=box, penwidth=2];
+    edge [fontname="Helvetica", fontsize=10];
+
+    // ===== Main States =====
+    IDLE        [fillcolor="#B0BEC5", label="IDLE\n(5s init timeout)"];
+    WANDERING   [fillcolor="#81C784", label="WANDERING\n(pan sweep +\ncorner navigation)"];
+    CHECK_FOR_BALL [fillcolor="#64B5F6", label="CHECK_FOR_BALL\n(2s timeout)"];
+    COLLECT_BALL [fillcolor="#FFB74D", label="COLLECT_BALL\n(60s timeout)"];
+    BALLS_LEFT  [fillcolor="#A1887F", label="BALLS_LEFT\n(go to nearest\nknown ball)"];
+    BLIND_SPOT  [fillcolor="#9575CD", label="BLIND_SPOT\n(navigate + sweep\nunvisited areas)"];
+    END         [fillcolor="#EF5350", label="END\n(return to start)"];
+    RECOVERY    [fillcolor="#E57373", label="RECOVERY\n(3s timeout,\nreason-based actions)"];
+
+    // ===== COLLECT_BALL Sub-States =====
+    subgraph cluster_collect {
+        label="COLLECT_BALL Sub-States";
+        style=dashed;
+        color="#FF9800";
+        fontname="Helvetica";
+        fontsize=14;
+        
+        CS_APPROACH  [fillcolor="#FFE0B2", label="APPROACH\n(PID + distance\nramp speed)"];
+        CS_PICKUP    [fillcolor="#FFCC80", label="PICKUP\n(open → lower →\nclose → carry)"];
+        CS_GOTO_BASKET [fillcolor="#FFB74D", label="GOTO_BASKET\n(A* pathfinding +\nvisual homing)"];
+        CS_DEPOSIT   [fillcolor="#FFA726", label="DEPOSIT\n(lower → open →\nreturn home)"];
+    }
+
+    // ===== Main State Transitions =====
+    IDLE -> WANDERING      [label="init OK"];
+    IDLE -> END            [label="init fail\n(3 retries)"];
+    
+    WANDERING -> CHECK_FOR_BALL [label="timeout /\nall corners visited"];
+    
+    CHECK_FOR_BALL -> COLLECT_BALL [label="ball found"];
+    CHECK_FOR_BALL -> BALLS_LEFT   [label="known balls\nin map"];
+    CHECK_FOR_BALL -> BLIND_SPOT   [label="no known balls,\nhas blind spots"];
+    CHECK_FOR_BALL -> END          [label="no balls,\nno blind spots"];
+    
+    COLLECT_BALL -> CHECK_FOR_BALL [label="ball deposited\n(success)"];
+    COLLECT_BALL -> RECOVERY       [label="timeout /\nsub-state failure"];
+    
+    BALLS_LEFT -> CHECK_FOR_BALL [label="nearest ball\nselected"];
+    BALLS_LEFT -> BLIND_SPOT    [label="no known balls"];
+    
+    BLIND_SPOT -> CHECK_FOR_BALL [label="sweep complete"];
+    BLIND_SPOT -> END            [label="no blind spots"];
+    BLIND_SPOT -> RECOVERY       [label="timeout"];
+    
+    END -> END [label="finished"];
+    
+    // ===== Recovery Transitions =====
+    RECOVERY -> CHECK_FOR_BALL [label="recovery OK\n→ origin", style=dashed];
+    RECOVERY -> BALLS_LEFT     [label="retries exhausted\n(5x)", style=dashed, color="#C62828"];
+    RECOVERY -> CS_GOTO_BASKET [label="retries exhausted\n(carrying ball)", style=dashed, color="#E65100"];
+    
+    // ===== Sub-State Transitions =====
+    CS_APPROACH -> CS_PICKUP     [label="centered & close"];
+    CS_APPROACH -> RECOVERY      [label="ball lost >1s", color="#C62828"];
+    
+    CS_PICKUP -> CS_GOTO_BASKET  [label="pickup complete"];
+    CS_PICKUP -> RECOVERY        [label="pre-check fail /\ntimeout", color="#C62828"];
+    
+    CS_GOTO_BASKET -> CS_DEPOSIT [label="close & aligned"];
+    CS_GOTO_BASKET -> RECOVERY   [label="path fail /\ntimeout", color="#C62828"];
+    
+    CS_DEPOSIT -> CHECK_FOR_BALL [label="deposit done\n→ COLLECT_BALL exit", style=bold, color="#2E7D32"];
+    CS_DEPOSIT -> RECOVERY       [label="pre-check fail /\ntimeout", color="#C62828"];
+    
+    // ===== Safety Monitor (any state → RECOVERY) =====
+    // Shown as a note
+    node [shape=note, fillcolor="#FFF9C4", fontsize=10];
+    SAFETY [label="SafetyMonitor\n(any state except RECOVERY)\n→ RECOVERY on:\n• STUCK\n• DARK_FRAME\n• ARM_COLLISION"];
+    
+    SAFETY -> RECOVERY [style=dotted, color="#F57F17", arrowhead=none];
+}

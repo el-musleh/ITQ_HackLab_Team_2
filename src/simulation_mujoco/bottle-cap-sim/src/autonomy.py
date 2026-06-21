@@ -1,8 +1,10 @@
-"""Finite-state machine: SEARCH → APPROACH → STOPPED → PICKUP → HOLDING.
+"""Finite-state machine: SEARCH → APPROACH → STOPPED → PICKUP → GOTO_BASKET → DEPOSIT → SEARCH.
 
 Pickup phases (LOWER_GRIPPER / CLOSE / RAISE) are driven entirely by the
 viewer, which owns the arm joint and cap position.  The controller holds in
 FSM.PICKUP and waits for signal_pickup_complete() or signal_pickup_failed().
+After pickup, the robot navigates to the basket, deposits the cap, and resumes
+searching.
 """
 
 import math
@@ -11,18 +13,24 @@ from typing import List, Optional, Tuple
 
 from src.config import (
     ARM_REACH, HEADING_KP,
-    LINEAR_SPEED, ANGULAR_SPEED, SEARCH_OMEGA,
+    LINEAR_SPEED, MIN_APPROACH_SPEED,
+    FAR_DISTANCE_THRESHOLD, CLOSE_DISTANCE_THRESHOLD,
+    ANGULAR_SPEED, SEARCH_OMEGA,
+    BASKET_X, BASKET_Y, BASKET_STOP_DISTANCE, BASKET_NAV_SPEED,
+    RETREAT_TICKS, RETREAT_SPEED,
     WRIST_CAM_OFFSET,
 )
 from src.vision import CapObservation
 
 
 class FSM(Enum):
-    SEARCH   = "SEARCH"
-    APPROACH = "APPROACH"
-    STOPPED  = "STOPPED"   # transitional — starts pickup on next tick
-    PICKUP   = "PICKUP"    # arm sequence running in viewer
-    HOLDING  = "HOLDING"   # cap attached, following gripper
+    SEARCH      = "SEARCH"
+    APPROACH    = "APPROACH"
+    STOPPED     = "STOPPED"      # transitional — starts pickup on next tick
+    PICKUP      = "PICKUP"       # arm sequence running in viewer
+    GOTO_BASKET = "GOTO_BASKET"  # navigate to basket with held cap
+    DEPOSIT     = "DEPOSIT"      # arm sequence to drop cap in basket
+    RETREAT     = "RETREAT"      # reverse away from basket after deposit
 
 
 def _norm(a: float) -> float:
@@ -51,6 +59,9 @@ class AutonomyController:
         self._stopped_logged: bool = False
         self._last_dist: Optional[float] = None
         self._approach_ticks: int = 0
+        self._goto_basket_logged: bool = False
+        self._retreat_tick: int = 0
+        self._retreat_logged: bool = False
 
     # ── Public step ────────────────────────────────────────────────────────
 
@@ -69,7 +80,13 @@ class AutonomyController:
             return self._approach(robot_x, robot_y, robot_theta, visible)
         if self.state is FSM.STOPPED:
             return self._begin_pickup()
-        # PICKUP and HOLDING: robot stays still, viewer drives arm + cap
+        if self.state is FSM.GOTO_BASKET:
+            return self._goto_basket(robot_x, robot_y, robot_theta)
+        if self.state is FSM.DEPOSIT:
+            return 0.0, 0.0
+        if self.state is FSM.RETREAT:
+            return self._retreat(robot_x, robot_y, robot_theta)
+        # PICKUP: robot stays still, viewer drives arm + cap
         return 0.0, 0.0
 
     # ── Viewer signals ─────────────────────────────────────────────────────
@@ -83,7 +100,8 @@ class AutonomyController:
             f"  cap_id={cap_id}  color={self.target_color}"
             f"  total_collected={len(self.collected_caps)}"
         )
-        self.state = FSM.HOLDING
+        self.state = FSM.GOTO_BASKET
+        self._goto_basket_logged = False
 
     def signal_pickup_failed(self) -> None:
         """Viewer calls this when the contact distance check fails."""
@@ -176,7 +194,8 @@ class AutonomyController:
         omega = HEADING_KP * heading_err
         omega = max(-ANGULAR_SPEED, min(ANGULAR_SPEED, omega))
         alignment = max(0.0, 1.0 - abs(heading_err) / (math.pi / 4.0))
-        return LINEAR_SPEED * alignment, omega
+        speed = self._distance_to_speed(dist) * alignment
+        return speed, omega
 
     def _begin_pickup(self) -> Tuple[float, float]:
         if self.target_id is None:
@@ -188,6 +207,93 @@ class AutonomyController:
         )
         self.state = FSM.PICKUP
         return 0.0, 0.0
+
+    def _goto_basket(
+        self,
+        rx: float,
+        ry: float,
+        robot_theta: float,
+    ) -> Tuple[float, float]:
+        """Navigate toward basket centre; stop when within BASKET_STOP_DISTANCE."""
+        dx = BASKET_X - rx
+        dy = BASKET_Y - ry
+        dist = math.hypot(dx, dy)
+        heading_err = _norm(math.atan2(dy, dx) - robot_theta)
+
+        if not self._goto_basket_logged:
+            self._goto_basket_logged = True
+            print(
+                f"[FSM] PICKUP → GOTO_BASKET"
+                f"  dist_to_basket={dist:.2f} m"
+            )
+
+        if dist <= BASKET_STOP_DISTANCE:
+            print(
+                f"[FSM] GOTO_BASKET → DEPOSIT"
+                f"  dist={dist:.3f} m"
+            )
+            self.state = FSM.DEPOSIT
+            return 0.0, 0.0
+
+        if self._log_step % 50 == 0:
+            print(
+                f"[goto_basket] dist={dist:.3f} m"
+                f"  heading_err={math.degrees(heading_err):+.1f}°"
+            )
+
+        omega = HEADING_KP * heading_err
+        omega = max(-ANGULAR_SPEED, min(ANGULAR_SPEED, omega))
+        alignment = max(0.0, 1.0 - abs(heading_err) / (math.pi / 4.0))
+        return BASKET_NAV_SPEED * alignment, omega
+
+    def signal_deposit_complete(self) -> None:
+        """Viewer calls this when the arm has finished depositing the cap."""
+        print(
+            f"[deposit] ✓ DEPOSITED"
+            f"  cap_id={self.held_cap_id}"
+            f"  total_deposited={len(self.collected_caps)}"
+        )
+        self.held_cap_id = None
+        self.state = FSM.RETREAT
+        self._retreat_tick = 0
+        self._retreat_logged = False
+
+    def _retreat(
+        self,
+        rx: float,
+        ry: float,
+        robot_theta: float,
+    ) -> Tuple[float, float]:
+        """Reverse away from basket for RETREAT_TICKS, then resume searching."""
+        if not self._retreat_logged:
+            self._retreat_logged = True
+            dx = BASKET_X - rx
+            dy = BASKET_Y - ry
+            dist = math.hypot(dx, dy)
+            print(f"[FSM] DEPOSIT → RETREAT  dist_from_basket={dist:.3f} m")
+
+        self._retreat_tick += 1
+        if self._retreat_tick >= RETREAT_TICKS:
+            print("[FSM] RETREAT → SEARCH")
+            self._reset_approach()
+            return 0.0, 0.0
+
+        return -RETREAT_SPEED, 0.0
+
+    def _distance_to_speed(self, distance: float) -> float:
+        """Linearly ramp approach speed based on cap distance.
+
+        Far  (>= FAR_DISTANCE_THRESHOLD)  → LINEAR_SPEED
+        Close (<= CLOSE_DISTANCE_THRESHOLD) → MIN_APPROACH_SPEED
+        In between → linear interpolation.
+        """
+        if distance >= FAR_DISTANCE_THRESHOLD:
+            return LINEAR_SPEED
+        if distance <= CLOSE_DISTANCE_THRESHOLD:
+            return MIN_APPROACH_SPEED
+        ratio = (distance - CLOSE_DISTANCE_THRESHOLD) / (
+            FAR_DISTANCE_THRESHOLD - CLOSE_DISTANCE_THRESHOLD)
+        return MIN_APPROACH_SPEED + ratio * (LINEAR_SPEED - MIN_APPROACH_SPEED)
 
     # ── Helpers ────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 """Passive MuJoCo viewer loop: vision, autonomy, robot control, and arm pickup."""
 
 import math
+import random
 import time
 from typing import Dict, Optional, Tuple
 
@@ -10,7 +11,12 @@ import mujoco.viewer
 from src.autonomy import AutonomyController, FSM
 from src.config import (
     ARM_LIFT_RANGE, ARM_LOWER_TICKS, ARM_RAISE_TICKS, ARM_CLOSE_TICKS,
+    ARM_DEPOSIT_LOWER_TICKS, ARM_DEPOSIT_OPEN_TICKS, ARM_DEPOSIT_RAISE_TICKS,
     ATTACH_DIST_XY, CAP_THICKNESS, ROBOT_HEIGHT, GRIPPER_HEIGHT_BODY,
+    BASKET_X, BASKET_Y, BASKET_RADIUS, BASKET_HEIGHT,
+    STUCK_WINDOW_TICKS, STUCK_MIN_DISPLACEMENT,
+    STUCK_REVERSE_TICKS, STUCK_TURN_TICKS,
+    ANGULAR_SPEED,
 )
 from src.robot_control import (
     RobotState, clamp_velocity, get_robot_addrs, gripper_world_xyz, write_robot,
@@ -87,6 +93,7 @@ def run_sim(xml_string: str, cap_colors: Dict[int, str]) -> None:
 
     # ── Inline pickup state machine ───────────────────────────────────────
     # Phases: "idle" → "lowering" → "closing" → "raising" → "holding"
+    #         → "deposit_lowering" → "deposit_opening" → "deposit_raising" → "idle"
     _pickup_phase: str      = "idle"
     _pickup_tick:  int      = 0
     _arm_z:        float    = 0.0       # current arm_lift joint value (0 = up)
@@ -96,6 +103,18 @@ def run_sim(xml_string: str, cap_colors: Dict[int, str]) -> None:
     _attach_x_off:  float   = 0.0      # cap_xy − gripper_xy (saved for RAISE)
     _attach_y_off:  float   = 0.0
     _cap_z:         float   = _CAP_FLOOR_Z  # current cap z during closing
+    _deposit_cap_x: float   = 0.0      # where to drop cap (basket centre)
+    _deposit_cap_y: float   = 0.0
+
+    # ── Stuck detection state ───────────────────────────────────────────
+    _stuck_window: list = []           # (x, y) positions over window
+    _stuck_v_cmd: float = 0.0          # last commanded v from autonomy
+    _recovery_phase: str = "none"      # "none" | "reverse" | "turn"
+    _recovery_tick: int = 0
+
+    # ── Camera view toggle ──────────────────────────────────────────────
+    _cam_mode: int = 0                 # 0 = free, 1 = wrist cam
+    _wrist_cam_id: int = -1
 
     def _write_arm(az: float) -> None:
         data.qpos[arm_lift_qpos_addr] = az
@@ -105,16 +124,31 @@ def run_sim(xml_string: str, cap_colors: Dict[int, str]) -> None:
     def _gripper_z(az: float) -> float:
         return ROBOT_HEIGHT / 2.0 + GRIPPER_HEIGHT_BODY + az
 
+    # Find wrist camera id for view toggle
+    for i in range(model.ncam):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_CAMERA, i)
+        if name == "wrist_cam":
+            _wrist_cam_id = i
+            break
+
     print(
         f"[sim] timestep={dt * 1000:.1f} ms  "
         f"control={_CONTROL_HZ} Hz (every {ctrl_every} steps)\n"
         f"[sim] robot starts at ({robot.x:.2f}, {robot.y:.2f})  "
         f"θ={robot.theta:.2f} rad\n"
         f"[sim] {len(cap_body_ids)} caps tracked\n"
-        f"[viewer] Opening MuJoCo viewer — close the window to exit."
+        f"[viewer] Opening MuJoCo viewer — press 'C' to toggle wrist camera, close window to exit."
     )
 
-    with mujoco.viewer.launch_passive(model, data) as viewer:
+    def _key_callback(key):
+        nonlocal _cam_mode
+        # 'C' or 'c' toggles camera view
+        if key == 67 or key == 99:
+            _cam_mode = 1 - _cam_mode
+            mode_name = "wrist cam" if _cam_mode == 1 else "free"
+            print(f"[viewer] camera → {mode_name}")
+
+    with mujoco.viewer.launch_passive(model, data, key_callback=_key_callback) as viewer:
         while viewer.is_running():
             t0 = time.perf_counter()
 
@@ -140,6 +174,54 @@ def run_sim(xml_string: str, cap_colors: Dict[int, str]) -> None:
                     _pickup_tick  = 0
                     _arm_z        = 0.0
                     print(f"[arm] LOWERING  cap_id={_active_cap}")
+
+                # Trigger deposit sequence when autonomy enters DEPOSIT
+                if (autonomy.state is FSM.DEPOSIT
+                        and _pickup_phase == "holding"):
+                    _pickup_phase = "deposit_lowering"
+                    _pickup_tick  = 0
+                    _arm_z        = 0.0
+                    # Drop cap inside basket with small random offset
+                    angle = random.uniform(0, 2 * math.pi)
+                    r_off = random.uniform(0, BASKET_RADIUS * 0.6)
+                    _deposit_cap_x = BASKET_X + r_off * math.cos(angle)
+                    _deposit_cap_y = BASKET_Y + r_off * math.sin(angle)
+                    print(f"[arm] DEPOSIT LOWERING  cap_id={_active_cap}")
+
+            # ── Stuck detection (only during autonomy-driven motion) ─────
+            if step % ctrl_every == 0 and _recovery_phase == "none":
+                _stuck_window.append((robot.x, robot.y))
+                _stuck_v_cmd = v
+                if len(_stuck_window) > STUCK_WINDOW_TICKS:
+                    _stuck_window.pop(0)
+                # Check: autonomy wants forward motion but robot hasn't moved
+                if (len(_stuck_window) >= STUCK_WINDOW_TICKS
+                        and _stuck_v_cmd > 0.01
+                        and _pickup_phase == "idle"):
+                    ox, oy = _stuck_window[0]
+                    disp = math.hypot(robot.x - ox, robot.y - oy)
+                    if disp < STUCK_MIN_DISPLACEMENT:
+                        print(f"[stuck] detected  disp={disp:.4f}m < {STUCK_MIN_DISPLACEMENT}m  → RECOVERY")
+                        _recovery_phase = "reverse"
+                        _recovery_tick = 0
+                        _stuck_window.clear()
+
+            # ── Recovery override ─────────────────────────────────────────
+            if _recovery_phase == "reverse":
+                _recovery_tick += 1
+                v, omega = -0.15, 0.0
+                if _recovery_tick >= STUCK_REVERSE_TICKS:
+                    _recovery_phase = "turn"
+                    _recovery_tick = 0
+                    print("[stuck] recovery: reversing → turning")
+            elif _recovery_phase == "turn":
+                _recovery_tick += 1
+                v, omega = 0.0, ANGULAR_SPEED
+                if _recovery_tick >= STUCK_TURN_TICKS:
+                    _recovery_phase = "none"
+                    _recovery_tick = 0
+                    _stuck_window.clear()
+                    print("[stuck] recovery complete — resuming autonomy")
 
             # ── Robot motion ─────────────────────────────────────────────
             v_safe, omega_safe = clamp_velocity(robot, v, omega)
@@ -245,6 +327,64 @@ def run_sim(xml_string: str, cap_colors: Dict[int, str]) -> None:
                     _write_arm(0.0)
                     _pickup_phase = "idle"
                     _active_cap   = None
+
+            elif _pickup_phase == "deposit_lowering":
+                _pickup_tick += 1
+                frac   = min(1.0, _pickup_tick / ARM_DEPOSIT_LOWER_TICKS)
+                _arm_z = ARM_LIFT_RANGE * frac
+                _write_arm(_arm_z)
+
+                # Cap follows gripper down
+                if _active_cap in cap_qpos:
+                    gx, gy, gz = gripper_world_xyz(robot, _arm_z)
+                    _write_cap_xyz(
+                        data, cap_qpos[_active_cap], cap_qvel[_active_cap],
+                        gx + _attach_x_off, gy + _attach_y_off, gz,
+                    )
+
+                if _pickup_tick >= ARM_DEPOSIT_LOWER_TICKS:
+                    _pickup_phase = "deposit_opening"
+                    _pickup_tick  = 0
+                    print(f"[arm] DEPOSIT OPENING  cap_id={_active_cap}")
+
+            elif _pickup_phase == "deposit_opening":
+                _pickup_tick += 1
+                # Hold arm position, drop cap at basket centre
+                _write_arm(_arm_z)
+                if _active_cap in cap_qpos:
+                    # Place cap on basket floor
+                    drop_z = BASKET_HEIGHT + _CAP_FLOOR_Z
+                    _write_cap_xyz(
+                        data, cap_qpos[_active_cap], cap_qvel[_active_cap],
+                        _deposit_cap_x, _deposit_cap_y, drop_z,
+                    )
+
+                if _pickup_tick >= ARM_DEPOSIT_OPEN_TICKS:
+                    _pickup_phase = "deposit_raising"
+                    _pickup_tick  = 0
+                    print(f"[arm] DEPOSIT RAISING  cap_id={_active_cap}")
+
+            elif _pickup_phase == "deposit_raising":
+                _pickup_tick += 1
+                frac   = min(1.0, _pickup_tick / ARM_DEPOSIT_RAISE_TICKS)
+                _arm_z = ARM_LIFT_RANGE * (1.0 - frac)
+                _write_arm(_arm_z)
+
+                if _pickup_tick >= ARM_DEPOSIT_RAISE_TICKS:
+                    _arm_z        = 0.0
+                    _write_arm(0.0)
+                    _pickup_phase = "idle"
+                    _active_cap   = None
+                    autonomy.signal_deposit_complete()
+                    print(f"[arm] DEPOSIT COMPLETE — resuming search")
+
+            # ── Camera view toggle (press C) ─────────────────────────────
+            # MuJoCo passive viewer doesn't expose key callbacks directly,
+            # but we can cycle the camera type each time the user presses 'C'
+            # via the viewer's built-in key handling. We set the camera here.
+            if _cam_mode == 1 and _wrist_cam_id >= 0:
+                viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FIXED
+                viewer.cam.fixedcamid = _wrist_cam_id
 
             # ── Physics step + render ─────────────────────────────────────
             mujoco.mj_step(model, data)

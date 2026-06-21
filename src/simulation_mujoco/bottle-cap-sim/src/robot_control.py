@@ -10,7 +10,7 @@ import numpy as np
 from src.config import (
     ARENA_X_MAX, ARENA_Y_MAX, ARENA_SAFETY_MARGIN,
     OBSTACLE_1, OBSTACLE_2, OBSTACLE_SAFETY_MARGIN,
-    BASKET_X, BASKET_Y, BASKET_INNER_SIZE, BASKET_WALL_THICKNESS,
+    BASKET_X, BASKET_Y, BASKET_RADIUS,
     BASKET_SAFETY_MARGIN,
     ROBOT_WIDTH, ROBOT_LENGTH, ROBOT_HEIGHT,
     ROBOT_START, ROBOT_START_THETA,
@@ -129,17 +129,12 @@ def clamp_velocity(
         if not in_curr or d_next < d_curr:
             return 0.0, omega
 
-    # ── Basket ─────────────────────────────────────────────────────────────
-    bw = (BASKET_INNER_SIZE / 2.0 + BASKET_WALL_THICKNESS
-          + ROBOT_WIDTH  / 2.0 + BASKET_SAFETY_MARGIN)
-    bl = (BASKET_INNER_SIZE / 2.0 + BASKET_WALL_THICKNESS
-          + ROBOT_LENGTH / 2.0 + BASKET_SAFETY_MARGIN)
-    in_next = abs(nx - BASKET_X) < bw and abs(ny - BASKET_Y) < bl
-    if in_next:
-        in_curr = abs(state.x - BASKET_X) < bw and abs(state.y - BASKET_Y) < bl
-        d_next = math.hypot(nx - BASKET_X, ny - BASKET_Y)
-        d_curr = math.hypot(state.x - BASKET_X, state.y - BASKET_Y)
-        if not in_curr or d_next < d_curr:
+    # ── Basket (circular) ──────────────────────────────────────────────────
+    basket_r = BASKET_RADIUS + ROBOT_WIDTH / 2.0 + BASKET_SAFETY_MARGIN
+    dist_next = math.hypot(nx - BASKET_X, ny - BASKET_Y)
+    if dist_next < basket_r:
+        dist_curr = math.hypot(state.x - BASKET_X, state.y - BASKET_Y)
+        if dist_next < dist_curr:
             return 0.0, omega
 
     return v, omega
