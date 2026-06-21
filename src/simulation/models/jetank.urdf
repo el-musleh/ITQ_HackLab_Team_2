@@ -1,0 +1,337 @@
+<?xml version="1.0"?>
+<robot name="jetank">
+  
+  <!-- Base Link (Chassis) - 17cm length x 19cm width x 25cm height -->
+  <!-- Center of mass lowered for stability -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.17 0.19 0.25"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.17 0.19 0.25"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.0"/>
+      <!-- Lower center of mass for stability -->
+      <origin xyz="0 0 -0.08" rpy="0 0 0"/>
+      <inertia ixx="0.020" ixy="0" ixz="0" iyy="0.018" iyz="0" izz="0.010"/>
+    </inertial>
+  </link>
+  
+  <!-- Wheels (4-wheel skid-steer) -->
+  <!-- Front Left Wheel -->
+  <link name="wheel_fl">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+      <material name="wheel">
+        <color rgba="0.1 0.1 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  
+  <joint name="wheel_fl_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="wheel_fl"/>
+    <origin xyz="0.06 0.115 -0.095" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  
+  <!-- Front Right Wheel -->
+  <link name="wheel_fr">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+      <material name="wheel"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  
+  <joint name="wheel_fr_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="wheel_fr"/>
+    <origin xyz="0.06 -0.115 -0.095" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  
+  <!-- Rear Left Wheel -->
+  <link name="wheel_rl">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+      <material name="wheel"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  
+  <joint name="wheel_rl_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="wheel_rl"/>
+    <origin xyz="-0.06 0.115 -0.095" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  
+  <!-- Rear Right Wheel -->
+  <link name="wheel_rr">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+      <material name="wheel"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.04"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  
+  <joint name="wheel_rr_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="wheel_rr"/>
+    <origin xyz="-0.06 -0.115 -0.095" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <!-- Camera Link (single front-facing camera) -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.025 0.04 0.015"/>
+      </geometry>
+      <material name="camera_blue">
+        <color rgba="0.2 0.4 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.025 0.04 0.015"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.03"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- Camera Joint (fixed to front of chassis, looking forward and slightly down) -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.095 0 0.08" rpy="0 0.15 0"/>
+  </joint>
+
+  <!-- 4-DOF Robotic Arm -->
+  <!-- Arm Base Link (Pan/Rotation) -->
+  <link name="arm_base">
+    <visual>
+      <geometry>
+        <cylinder radius="0.025" length="0.05"/>
+      </geometry>
+      <material name="arm_gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.025" length="0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- Arm Base Joint (Pan - rotates around Z axis) -->
+  <joint name="arm_base_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="arm_base"/>
+    <origin xyz="-0.04 0 0.08" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/>
+  </joint>
+
+  <!-- Shoulder Link (Upper arm) -->
+  <link name="arm_shoulder">
+    <visual>
+      <geometry>
+        <box size="0.09 0.025 0.025"/>
+      </geometry>
+      <material name="arm_gray"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.09 0.025 0.025"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.12"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- Shoulder Joint (pitch - up/down) -->
+  <joint name="arm_shoulder_joint" type="revolute">
+    <parent link="arm_base"/>
+    <child link="arm_shoulder"/>
+    <origin xyz="0 0 0.025" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.40" upper="1.40" effort="10" velocity="1.0"/>
+  </joint>
+
+  <!-- Elbow Link (Forearm) -->
+  <link name="arm_elbow">
+    <visual>
+      <geometry>
+        <box size="0.09 0.025 0.025"/>
+      </geometry>
+      <material name="arm_gray"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.09 0.025 0.025"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.10"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- Elbow Joint (pitch - up/down) -->
+  <joint name="arm_elbow_joint" type="revolute">
+    <parent link="arm_shoulder"/>
+    <child link="arm_elbow"/>
+    <origin xyz="0.09 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.40" upper="1.40" effort="10" velocity="1.0"/>
+  </joint>
+
+  <!-- Wrist Link -->
+  <link name="arm_wrist">
+    <visual>
+      <geometry>
+        <box size="0.05 0.02 0.02"/>
+      </geometry>
+      <material name="arm_gray"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.02 0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00005"/>
+    </inertial>
+  </link>
+
+  <!-- Wrist Joint (pitch - gripper orientation) -->
+  <joint name="arm_wrist_joint" type="revolute">
+    <parent link="arm_elbow"/>
+    <child link="arm_wrist"/>
+    <origin xyz="0.09 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="5" velocity="1.0"/>
+  </joint>
+
+  <!-- Gripper Base (hook-style claw mechanism) -->
+  <link name="gripper_base">
+    <visual>
+      <geometry>
+        <box size="0.03 0.04 0.015"/>
+      </geometry>
+      <material name="gripper_gray">
+        <color rgba="0.4 0.4 0.4 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.03 0.04 0.015"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00002" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- Gripper Base Joint (fixed to wrist) -->
+  <joint name="gripper_base_joint" type="fixed">
+    <parent link="arm_wrist"/>
+    <child link="gripper_base"/>
+    <origin xyz="0.035 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Hook Claw (opens/closes like a hook) -->
+  <link name="hook_claw">
+    <visual>
+      <geometry>
+        <box size="0.025 0.05 0.01"/>
+      </geometry>
+      <material name="claw_red">
+        <color rgba="0.8 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.025 0.05 0.01"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.015"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- Hook Claw Joint (revolute - opens/closes) -->
+  <joint name="claw_joint" type="revolute">
+    <parent link="gripper_base"/>
+    <child link="hook_claw"/>
+    <origin xyz="0.02 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <!-- Open: 0°, Closed: -60° (hook closes downward) -->
+    <limit lower="-1.05" upper="0" effort="5" velocity="1.0"/>
+  </joint>
+
+</robot>

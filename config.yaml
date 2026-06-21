@@ -1,5 +1,11 @@
 # ITQ Bottle Cap Collector — Configuration
 
+# Arena dimensions
+arena:
+  width_cm: 175
+  height_cm: 180
+  boundary_color: yellow
+
 # Camera settings
 camera:
   width: 320
@@ -7,29 +13,86 @@ camera:
   fps: 30
   source: 0  # CSI camera on Jetson
 
-# Color detection (HSV)
-# Adjust these on-site during calibration!
-color:
-  lower_hsv: [24, 100, 100]   # H, S, V min
-  upper_hsv: [44, 255, 255]  # H, S, V max
-  # Example presets:
-  # yellow: [24, 100, 100] to [44, 255, 255]
-  # red:    [160, 100, 100] to [180, 255, 255]
-  # green:  [50, 200, 100] to [70, 255, 255]
-  # blue:   [110, 180, 200] to [135, 225, 255]
+# Ball detection (multi-color)
+balls:
+  colors:
+    blue:
+      hsv_lower: [100, 150, 50]
+      hsv_upper: [130, 255, 255]
+    red_1:
+      hsv_lower: [0, 150, 50]
+      hsv_upper: [10, 255, 255]
+    red_2:
+      hsv_lower: [170, 150, 50]
+      hsv_upper: [180, 255, 255]
+    silver:
+      hsv_lower: [0, 0, 180]
+      hsv_upper: [180, 25, 255]
+  min_area_px: 100
+  validation_frames: 3
+  max_ball_diameter_cm: 5.0    # Claw opening limit
+  min_aspect_ratio: 0.6        # Ball bounding box w/h ratio
+  max_aspect_ratio: 1.4
+
+# Basket (calibrated at runtime)
+basket:
+  hsv_lower: [0, 0, 50]
+  hsv_upper: [180, 50, 200]
+  size_px: null  # Set by calibration
+  location_x: null
+  location_y: null
+
+# Obstacles (yellow tape detection)
+obstacles:
+  yellow_hsv_lower: [20, 100, 100]
+  yellow_hsv_upper: [40, 255, 255]
+  threshold_px: 1800
+  edge_threshold: 500
 
 # State machine tuning
 state_machine:
-  approach_distance_px: 50    # Stop when cap fills this many pixels
-  search_rotate_speed: 30      # Degrees per second while searching
-  approach_speed: 40           # Motor speed during approach
-  recovery_timeout_sec: 5      # Back up if stuck for N seconds
+  approach_distance_px: 50
+  search_rotate_speed: 30
+  approach_speed: 40
+  recovery_timeout_sec: 5
+
+# World map (ball memory & blind-spot coverage)
+world_map:
+  grid_resolution: 0.1    # Cell size for coverage grid (m), smaller=finer
+  view_radius: 0.8        # Camera sweep coverage radius (m)
+  merge_distance: 0.1     # Duplicate ball merge threshold (m)
+
+# Pathfinder (A* grid-based navigation around obstacles)
+pathfinder:
+  cell_size: 0.05       # Grid cell size (m), smaller=finer but slower
+  safety_margin: 0.18   # Robot radius + buffer from obstacle edges (m)
+
+# Odometry (dead-reckoning pose estimation for real hardware)
+odometry:
+  correction_alpha: 0.3    # Weight for landmark correction (0=ignore, 1=full trust)
+  drift_noise_std: 0.0     # Simulated drift noise (m per step), 0=disabled
 
 # PID controller
 pid:
   kp: 3.0   # Proportional gain
   ki: 0.0   # Integral gain
   kd: 0.5   # Derivative gain
+
+# Motor limits
+motors:
+  max_speed: 0.25
+  approach_speed: 0.15
+  search_speed: 0.10
+  min_approach_speed: 0.05       # Crawl speed when very close to ball
+  far_distance_threshold: 50.0   # cm — full speed above this distance
+  close_distance_threshold: 15.0 # cm — min speed below this distance
+
+# Arm poses (angles in degrees)
+arm_poses:
+  home: [0, 0, 0, 0]        # All servos at center
+  pickup: [0, -40, -60, 0]  # Lower to ground
+  carry: [0, 20, 30, 90]    # Lift with gripper closed
+  deposit: [0, 40, 40, 0]   # Over basket, gripper open
 
 # Servo IDs (JETANK hardware)
 servos:
@@ -44,3 +107,26 @@ servos:
 serial:
   port: /dev/ttyTHS1
   baudrate: 1000000
+
+# Safety monitor (proactive collision / stuck / dark-frame detection)
+safety:
+  stuck_window_s: 2.0          # Rolling window for stuck detection
+  stuck_min_displacement: 0.02 # Min displacement (m) to not be considered stuck
+  stuck_motor_threshold: 0.05  # Min motor sum to consider "motors running"
+  dark_threshold: 25           # Mean brightness below which frame is "dark"
+  dark_frame_count: 3          # Consecutive dark frames to trigger
+  arm_timeout_multiplier: 1.5  # Sub-state duration multiplier for timeout
+  arm_visual_check: true       # Enable visual pre-check before arm extension
+
+# Simulation (PyBullet) settings. Only used by src/simulation/.
+simulation:
+  gui: true                # Show PyBullet GUI window (false for headless/CI)
+  real_time: true          # Step at wall-clock real time
+  locomotion_mode: velocity  # 'velocity' (stable, default) | 'wheels' (realistic)
+  ball_spawn_seed: 42      # RNG seed for reproducible ball positions
+  camera_fov: 160          # Simulated camera field of view (degrees)
+  renderer: auto           # 'auto' | 'opengl' | 'tiny' (fallback for headless)
+  num_balls: 22            # Default ball count for run_simulation.py
+  max_duration_sec: 300    # Default run timeout for run_simulation.py
+  steps_per_tick: 12       # Physics steps per state-machine tick
+  show_visualization: true # OpenCV debug window in run_simulation.py

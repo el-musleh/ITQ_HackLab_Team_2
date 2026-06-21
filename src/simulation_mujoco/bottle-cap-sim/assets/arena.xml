@@ -1,0 +1,165 @@
+<mujoco model="bottle_cap_arena">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.004" gravity="0 0 -9.81"/>
+
+  <statistic center="0 0 0.25" extent="1.9"/>
+
+  <visual>
+    <headlight diffuse="0.8 0.8 0.8" ambient="0.40 0.40 0.40" specular="0 0 0"/>
+    <rgba haze="0.10 0.12 0.12 1"/>
+    <global azimuth="145" elevation="-38"/>
+  </visual>
+
+  <asset>
+    <texture name="floor_tex" type="2d" builtin="checker" rgb1="0.92 0.92 0.92" rgb2="0.84 0.84 0.84" width="512" height="512"/>
+    <material name="floor_mat" texture="floor_tex" texrepeat="8 8" reflectance="0.04"/>
+  </asset>
+
+  <worldbody>
+
+    <!-- Floor -->
+    <geom name="floor" type="plane" size="3 3 0.1" material="floor_mat"/>
+
+    <!-- Yellow floor tape (arena boundary) -->
+    <geom name="tape_n" type="box" size="0.8950 0.0200 0.0015" pos="0.0000 0.9000 0.0015" rgba="1.0 0.92 0.0 1"/>
+    <geom name="tape_s" type="box" size="0.8950 0.0200 0.0015" pos="0.0000 -0.9000 0.0015" rgba="1.0 0.92 0.0 1"/>
+    <geom name="tape_e" type="box" size="0.0200 0.9200 0.0015" pos="0.8750 0.0000 0.0015" rgba="1.0 0.92 0.0 1"/>
+    <geom name="tape_w" type="box" size="0.0200 0.9200 0.0015" pos="-0.8750 0.0000 0.0015" rgba="1.0 0.92 0.0 1"/>
+
+    <!-- Crate obstacles with yellow tape -->
+    <geom name="crate_small" type="box" size="0.1500 0.1000 0.0750" pos="-0.4000 0.4000 0.0750" rgba="0.6 0.4 0.2 1.0"/>
+    <geom name="crate_small_tape" type="box" size="0.1550 0.1050 0.0100" pos="-0.4000 0.4000 0.0850" rgba="1.0 0.92 0.0 1"/>
+    <geom name="crate_large" type="box" size="0.2000 0.1500 0.0750" pos="0.4000 -0.4000 0.0750" rgba="0.6 0.4 0.2 1.0"/>
+    <geom name="crate_large_tape" type="box" size="0.2050 0.1550 0.0100" pos="0.4000 -0.4000 0.0850" rgba="1.0 0.92 0.0 1"/>
+
+    <!-- Gray collection basket (centre of arena) -->
+    <geom name="basket" type="cylinder" size="0.1500 0.0600" pos="0.0000 0.0000 0.0600" rgba="0.48 0.48 0.48 1"/>
+
+    <!-- JETANK robot digital twin (visual placeholder) -->
+    <body name="robot" pos="-0.6500 -0.6500 0.1250">
+      <freejoint name="robot_free"/>
+      <geom name="chassis" type="box" size="0.0790 0.0850 0.1250" rgba="0.16 0.16 0.16 1" mass="1.8"/>
+      <geom name="track_l" type="box" size="0.0890 0.0150 0.1310" pos="0.0000 0.0880 0.0000" rgba="0.07 0.07 0.07 1" mass="0.25"/>
+      <geom name="tread_l_55" type="box" size="0.0100 0.0160 0.0040" pos="-0.0550 0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_l_20" type="box" size="0.0100 0.0160 0.0040" pos="-0.0200 0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_l_15" type="box" size="0.0100 0.0160 0.0040" pos="0.0150 0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_l_50" type="box" size="0.0100 0.0160 0.0040" pos="0.0500 0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="track_r" type="box" size="0.0890 0.0150 0.1310" pos="0.0000 -0.0880 0.0000" rgba="0.07 0.07 0.07 1" mass="0.25"/>
+      <geom name="tread_r_55" type="box" size="0.0100 0.0160 0.0040" pos="-0.0550 -0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_r_20" type="box" size="0.0100 0.0160 0.0040" pos="-0.0200 -0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_r_15" type="box" size="0.0100 0.0160 0.0040" pos="0.0150 -0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="tread_r_50" type="box" size="0.0100 0.0160 0.0040" pos="0.0500 -0.1030 -0.1290" rgba="0.13 0.13 0.13 1"/>
+      <geom name="hub_fl" type="cylinder" size="0.0350 0.0200" pos="0.0850 0.0910 -0.0900" euler="1.5708 0.0000 0.0000" rgba="0.20 0.20 0.20 1"/>
+      <geom name="hub_fr" type="cylinder" size="0.0350 0.0200" pos="0.0850 -0.0910 -0.0900" euler="1.5708 0.0000 0.0000" rgba="0.20 0.20 0.20 1"/>
+      <geom name="hub_rl" type="cylinder" size="0.0350 0.0200" pos="-0.0850 0.0910 -0.0900" euler="1.5708 0.0000 0.0000" rgba="0.20 0.20 0.20 1"/>
+      <geom name="hub_rr" type="cylinder" size="0.0350 0.0200" pos="-0.0850 -0.0910 -0.0900" euler="1.5708 0.0000 0.0000" rgba="0.20 0.20 0.20 1"/>
+      <geom name="top_deck" type="box" size="0.0750 0.0750 0.0060" pos="0.0000 0.0000 0.1310" rgba="0.22 0.22 0.22 1"/>
+      <body name="arm_assembly" pos="0 0 0">
+        <joint name="arm_lift" type="slide" axis="0 0 1" range="-0.20 0"/>
+        <geom name="cam_housing" type="box" size="0.0200 0.0280 0.0160" pos="0.0870 0.0000 0.0875" rgba="0.12 0.12 0.12 1"/>
+        <geom name="cam_lens" type="cylinder" size="0.0090 0.0060" pos="0.1090 0.0000 0.0875" euler="0.0000 1.5708 0.0000" rgba="0.05 0.20 0.55 1"/>
+        <geom name="arm_base" type="cylinder" size="0.0200 0.0200" pos="0.0200 0.0000 0.1450" mass="0.08" rgba="0.25 0.25 0.25 1"/>
+        <geom name="arm_shoulder" type="box" size="0.0130 0.0130 0.0300" pos="0.0200 0.0000 0.1950" rgba="0.22 0.22 0.22 1"/>
+        <geom name="arm_upper" type="box" size="0.0600 0.0110 0.0110" pos="0.0800 0.0000 0.2250" rgba="0.30 0.30 0.30 1"/>
+        <geom name="arm_elbow" type="cylinder" size="0.0130 0.0130" pos="0.1400 0.0000 0.2250" euler="1.5708 0.0000 0.0000" rgba="0.25 0.25 0.25 1"/>
+        <geom name="arm_forearm" type="box" size="0.0420 0.0100 0.0100" pos="0.1820 0.0000 0.2130" rgba="0.30 0.30 0.30 1"/>
+        <geom name="arm_wrist" type="box" size="0.0130 0.0130 0.0130" pos="0.2370 0.0000 0.2070" rgba="0.22 0.22 0.22 1"/>
+        <geom name="gripper_palm" type="box" size="0.0120 0.0220 0.0080" pos="0.2620 0.0000 0.2070" rgba="0.18 0.18 0.18 1"/>
+        <geom name="gripper_l" type="box" size="0.0140 0.0070 0.0060" pos="0.2880 0.0160 0.2030" rgba="0.20 0.20 0.20 1"/>
+        <geom name="gripper_r" type="box" size="0.0140 0.0070 0.0060" pos="0.2880 -0.0160 0.2030" rgba="0.20 0.20 0.20 1"/>
+        <camera name="wrist_cam" pos="0.2370 0.0000 0.2070" xyaxes="0 -1 0 0 0 1" fovy="80"/>
+      </body>
+    </body>
+
+    <!-- Bottle caps -->
+    <body name="cap_0" pos="0.3848 0.0748 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0156 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_1" pos="-0.7503 -0.4631 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0171 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_2" pos="0.0976 0.3551 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0180 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_3" pos="-0.4458 0.1468 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0177 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_4" pos="-0.5420 -0.1271 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0188 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_5" pos="0.7308 -0.2694 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0158 0.0040" rgba="0.9 0.1 0.1 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_6" pos="-0.2251 -0.2569 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0169 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_7" pos="0.7532 -0.1994 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0190 0.0040" rgba="0.9 0.1 0.1 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_8" pos="0.2054 0.6349 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0165 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_9" pos="0.3261 -0.7468 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0179 0.0040" rgba="0.9 0.1 0.1 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_10" pos="0.7726 0.5835 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0189 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_11" pos="-0.0744 0.5500 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0169 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_12" pos="-0.4637 -0.3836 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0169 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_13" pos="-0.1921 0.8045 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0182 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_14" pos="-0.4467 -0.2887 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0184 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_15" pos="-0.7476 -0.3041 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0161 0.0040" rgba="0.1 0.3 0.9 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_16" pos="0.6607 0.1108 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0153 0.0040" rgba="0.9 0.1 0.1 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_17" pos="0.2482 -0.1719 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0166 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_18" pos="-0.3751 -0.4169 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0173 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_19" pos="0.3939 -0.1177 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0177 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_20" pos="-0.4480 0.8189 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0170 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+    <body name="cap_21" pos="0.4080 0.5940 0.0040">
+      <freejoint/>
+      <geom type="cylinder" size="0.0175 0.0040" rgba="0.78 0.78 0.78 1.0" mass="0.005"/>
+    </body>
+
+  </worldbody>
+</mujoco>

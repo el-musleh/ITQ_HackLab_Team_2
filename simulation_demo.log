@@ -1,0 +1,379 @@
+2026-06-21 04:27:13,942 [INFO] ============================================================
+2026-06-21 04:27:13,942 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:27:13,942 [INFO] ============================================================
+2026-06-21 04:27:13,949 [INFO] Initializing simulation...
+2026-06-21 04:27:14,699 [INFO] Initialization complete
+2026-06-21 04:27:14,699 [INFO] Letting robot settle...
+2026-06-21 04:27:15,237 [ERROR] Robot height abnormal: -0.022m
+2026-06-21 04:27:15,237 [ERROR] Robot unstable at start: height
+2026-06-21 04:27:57,148 [INFO] ============================================================
+2026-06-21 04:27:57,149 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:27:57,149 [INFO] ============================================================
+2026-06-21 04:27:57,155 [INFO] Initializing simulation...
+2026-06-21 04:27:57,919 [INFO] Initialization complete
+2026-06-21 04:27:57,920 [INFO] Letting robot settle...
+2026-06-21 04:27:58,451 [INFO] Robot stable, starting demo...
+2026-06-21 04:27:58,451 [INFO] 
+============================================================
+2026-06-21 04:27:58,451 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:27:58,451 [INFO] ============================================================
+2026-06-21 04:27:58,451 [INFO] Searching for balls...
+2026-06-21 04:27:58,493 [INFO] Found red ball at distance 48.2cm
+2026-06-21 04:27:58,493 [INFO] 
+============================================================
+2026-06-21 04:27:58,493 [INFO] STATE: APPROACHING RED BALL
+2026-06-21 04:27:58,493 [INFO] ============================================================
+2026-06-21 04:27:58,493 [INFO] Approaching red ball...
+2026-06-21 04:28:00,305 [INFO] Ball reached!
+2026-06-21 04:28:00,305 [INFO] 
+============================================================
+2026-06-21 04:28:00,306 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:28:00,306 [INFO] ============================================================
+2026-06-21 04:28:00,306 [INFO] Executing pickup sequence...
+2026-06-21 04:28:00,306 [INFO] Waiting for robot to settle...
+2026-06-21 04:28:00,580 [INFO] Lowering arm...
+2026-06-21 04:28:00,580 [INFO] Moving arm to: [0, -30, -50, -20]
+2026-06-21 04:28:02,081 [INFO] Arm movement complete and stable
+2026-06-21 04:28:02,082 [INFO] Closing gripper...
+2026-06-21 04:28:02,082 [INFO] Moving arm to: [0, -30, -50, 0]
+2026-06-21 04:28:03,085 [INFO] Arm movement complete and stable
+2026-06-21 04:28:03,085 [INFO] Lifting ball...
+2026-06-21 04:28:03,085 [INFO] Moving arm to: [0, 10, 20, 45]
+2026-06-21 04:28:04,586 [INFO] Arm movement complete and stable
+2026-06-21 04:28:04,586 [INFO] Pickup complete!
+2026-06-21 04:28:04,586 [INFO] 
+============================================================
+2026-06-21 04:28:04,586 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:28:04,586 [INFO] ============================================================
+2026-06-21 04:28:04,586 [INFO] Searching for basket...
+2026-06-21 04:28:19,604 [WARNING] Basket not found
+2026-06-21 04:28:19,604 [ERROR] Basket not found!
+2026-06-21 04:28:19,621 [INFO] Demo ended
+2026-06-21 04:29:04,898 [INFO] ============================================================
+2026-06-21 04:29:04,898 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:29:04,898 [INFO] ============================================================
+2026-06-21 04:29:04,904 [INFO] Initializing simulation...
+2026-06-21 04:29:05,842 [INFO] Initialization complete
+2026-06-21 04:29:05,842 [INFO] Letting robot settle...
+2026-06-21 04:29:06,376 [INFO] Robot stable, starting demo...
+2026-06-21 04:29:06,377 [INFO] 
+============================================================
+2026-06-21 04:29:06,377 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:29:06,377 [INFO] ============================================================
+2026-06-21 04:29:06,377 [INFO] Searching for balls...
+2026-06-21 04:29:06,417 [INFO] Found red ball at distance 48.2cm
+2026-06-21 04:29:06,418 [INFO] 
+============================================================
+2026-06-21 04:29:06,418 [INFO] STATE: APPROACHING RED BALL
+2026-06-21 04:29:06,418 [INFO] ============================================================
+2026-06-21 04:29:06,418 [INFO] Approaching red ball...
+2026-06-21 04:29:08,401 [INFO] Ball reached!
+2026-06-21 04:29:08,402 [INFO] 
+============================================================
+2026-06-21 04:29:08,402 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:29:08,402 [INFO] ============================================================
+2026-06-21 04:29:08,402 [INFO] Executing pickup sequence...
+2026-06-21 04:29:08,402 [INFO] Waiting for robot to settle...
+2026-06-21 04:29:08,669 [INFO] Lowering arm...
+2026-06-21 04:29:08,670 [INFO] Moving arm to: [0, -30, -50, -20]
+2026-06-21 04:29:10,173 [INFO] Arm movement complete and stable
+2026-06-21 04:29:10,174 [INFO] Closing gripper...
+2026-06-21 04:29:10,174 [INFO] Moving arm to: [0, -30, -50, 0]
+2026-06-21 04:29:11,174 [INFO] Arm movement complete and stable
+2026-06-21 04:29:11,174 [INFO] Lifting ball...
+2026-06-21 04:29:11,174 [INFO] Moving arm to: [0, 10, 20, 45]
+2026-06-21 04:29:12,679 [INFO] Arm movement complete and stable
+2026-06-21 04:29:12,679 [INFO] Pickup complete!
+2026-06-21 04:29:12,679 [INFO] 
+============================================================
+2026-06-21 04:29:12,679 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:29:12,679 [INFO] ============================================================
+2026-06-21 04:29:12,679 [INFO] Searching for basket...
+2026-06-21 04:33:31,124 [INFO] ============================================================
+2026-06-21 04:33:31,124 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:33:31,124 [INFO] ============================================================
+2026-06-21 04:33:31,130 [INFO] Initializing simulation...
+2026-06-21 04:33:32,119 [INFO] Initialization complete
+2026-06-21 04:33:32,119 [INFO] Letting robot settle...
+2026-06-21 04:33:32,652 [INFO] Robot stable, starting demo...
+2026-06-21 04:33:32,652 [INFO] 
+============================================================
+2026-06-21 04:33:32,652 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:33:32,652 [INFO] ============================================================
+2026-06-21 04:33:32,652 [INFO] Searching for balls...
+2026-06-21 04:33:32,686 [INFO] Found blue ball at distance 56.2cm
+2026-06-21 04:33:32,687 [INFO] 
+============================================================
+2026-06-21 04:33:32,687 [INFO] STATE: APPROACHING BLUE BALL
+2026-06-21 04:33:32,687 [INFO] ============================================================
+2026-06-21 04:33:32,687 [INFO] Approaching blue ball...
+2026-06-21 04:33:34,120 [INFO] Ball reached!
+2026-06-21 04:33:34,121 [INFO] 
+============================================================
+2026-06-21 04:33:34,121 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:33:34,121 [INFO] ============================================================
+2026-06-21 04:33:34,121 [INFO] Executing pickup sequence with hook claw...
+2026-06-21 04:33:34,121 [INFO] Waiting for robot to settle...
+2026-06-21 04:33:34,390 [INFO] Step 1: Opening claw...
+2026-06-21 04:33:34,524 [INFO] Step 2: Lowering arm to ground...
+2026-06-21 04:33:34,524 [INFO] Moving arm to: [0, -35, -55, -25]
+2026-06-21 04:33:36,029 [INFO] Arm movement complete and stable
+2026-06-21 04:33:36,029 [INFO] Step 3: Closing claw to grip ball...
+2026-06-21 04:33:36,297 [INFO] Step 4: Lifting ball...
+2026-06-21 04:33:36,297 [INFO] Moving arm to: [0, 15, 25, 50]
+2026-06-21 04:33:37,801 [INFO] Arm movement complete and stable
+2026-06-21 04:33:37,801 [INFO] ✓ Pickup complete! Ball secured in claw.
+2026-06-21 04:33:37,801 [INFO] 
+============================================================
+2026-06-21 04:33:37,801 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:33:37,801 [INFO] ============================================================
+2026-06-21 04:33:37,801 [INFO] Searching for basket...
+2026-06-21 04:33:52,827 [WARNING] Basket not found
+2026-06-21 04:33:52,828 [ERROR] Basket not found!
+2026-06-21 04:33:52,848 [INFO] Demo ended
+2026-06-21 04:36:15,494 [INFO] ============================================================
+2026-06-21 04:36:15,494 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:36:15,494 [INFO] ============================================================
+2026-06-21 04:36:15,500 [INFO] Initializing simulation...
+2026-06-21 04:36:16,566 [INFO] Initialization complete
+2026-06-21 04:36:16,567 [INFO] Letting robot settle...
+2026-06-21 04:36:17,094 [INFO] Robot stable, starting demo...
+2026-06-21 04:36:17,094 [INFO] 
+============================================================
+2026-06-21 04:36:17,094 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:36:17,094 [INFO] ============================================================
+2026-06-21 04:36:17,094 [INFO] Searching for balls...
+2026-06-21 04:36:17,127 [INFO] Found blue ball at distance 56.2cm
+2026-06-21 04:36:17,127 [INFO] 
+============================================================
+2026-06-21 04:36:17,127 [INFO] STATE: APPROACHING BLUE BALL
+2026-06-21 04:36:17,127 [INFO] ============================================================
+2026-06-21 04:36:17,127 [INFO] Approaching blue ball...
+2026-06-21 04:36:18,460 [INFO] Ball reached!
+2026-06-21 04:36:18,460 [INFO] 
+============================================================
+2026-06-21 04:36:18,461 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:36:18,461 [INFO] ============================================================
+2026-06-21 04:36:18,461 [INFO] Executing pickup sequence with hook claw...
+2026-06-21 04:36:18,461 [INFO] Waiting for robot to settle...
+2026-06-21 04:36:18,726 [INFO] Step 1: Opening claw...
+2026-06-21 04:36:18,858 [INFO] Step 2: Lowering arm to ground...
+2026-06-21 04:36:18,858 [INFO] Moving arm to: [0, -35, -55, -25]
+2026-06-21 04:36:20,359 [INFO] Arm movement complete and stable
+2026-06-21 04:36:20,359 [INFO] Step 3: Closing claw to grip ball...
+2026-06-21 04:36:20,626 [INFO] Step 4: Lifting ball...
+2026-06-21 04:36:20,626 [INFO] Moving arm to: [0, 15, 25, 50]
+2026-06-21 04:36:22,131 [INFO] Arm movement complete and stable
+2026-06-21 04:36:22,131 [INFO] ✓ Pickup complete! Ball secured in claw.
+2026-06-21 04:36:22,131 [INFO] 
+============================================================
+2026-06-21 04:36:22,131 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:36:22,131 [INFO] ============================================================
+2026-06-21 04:36:22,131 [INFO] Searching for basket...
+2026-06-21 04:45:35,298 [INFO] ============================================================
+2026-06-21 04:45:35,298 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:45:35,298 [INFO] ============================================================
+2026-06-21 04:45:35,305 [INFO] Initializing simulation...
+2026-06-21 04:45:36,281 [INFO] Initialization complete
+2026-06-21 04:45:36,281 [INFO] Letting robot settle...
+2026-06-21 04:45:36,804 [INFO] Robot stable, starting demo...
+2026-06-21 04:45:36,804 [INFO] 
+============================================================
+2026-06-21 04:45:36,804 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:45:36,804 [INFO] ============================================================
+2026-06-21 04:45:36,804 [INFO] Searching for balls...
+2026-06-21 04:45:36,834 [INFO] Found silver ball at distance 5.1cm
+2026-06-21 04:45:36,834 [INFO] 
+============================================================
+2026-06-21 04:45:36,834 [INFO] STATE: APPROACHING SILVER BALL
+2026-06-21 04:45:36,834 [INFO] ============================================================
+2026-06-21 04:45:36,834 [INFO] Approaching silver ball...
+2026-06-21 04:45:36,863 [INFO] Ball reached!
+2026-06-21 04:45:36,863 [INFO] 
+============================================================
+2026-06-21 04:45:36,863 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:45:36,863 [INFO] ============================================================
+2026-06-21 04:45:36,863 [INFO] Executing pickup sequence with hook claw...
+2026-06-21 04:45:36,863 [INFO] Waiting for robot to settle...
+2026-06-21 04:45:37,125 [INFO] Step 1: Opening claw...
+2026-06-21 04:45:37,256 [INFO] Step 2: Lowering arm to ground...
+2026-06-21 04:45:37,256 [INFO] Moving arm to: [0, -35, -55, -25]
+2026-06-21 04:45:38,756 [INFO] Arm movement complete and stable
+2026-06-21 04:45:38,757 [INFO] Step 3: Closing claw to grip ball...
+2026-06-21 04:45:39,019 [INFO] Step 4: Lifting ball...
+2026-06-21 04:45:39,020 [INFO] Moving arm to: [0, 15, 25, 50]
+2026-06-21 04:45:40,523 [INFO] Arm movement complete and stable
+2026-06-21 04:45:40,523 [INFO] ✓ Pickup complete! Ball secured in claw.
+2026-06-21 04:45:40,523 [INFO] 
+============================================================
+2026-06-21 04:45:40,523 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:45:40,523 [INFO] ============================================================
+2026-06-21 04:45:40,523 [INFO] Searching for basket (360° rotation)...
+2026-06-21 04:45:42,554 [INFO] Still searching... 2s elapsed
+2026-06-21 04:45:44,565 [INFO] Still searching... 4s elapsed
+2026-06-21 04:45:46,571 [INFO] Still searching... 6s elapsed
+2026-06-21 04:45:48,572 [INFO] Still searching... 8s elapsed
+2026-06-21 04:45:50,598 [INFO] Still searching... 10s elapsed
+2026-06-21 04:45:52,626 [INFO] Still searching... 12s elapsed
+2026-06-21 04:45:54,626 [INFO] Still searching... 14s elapsed
+2026-06-21 04:45:56,651 [INFO] Still searching... 16s elapsed
+2026-06-21 04:45:58,664 [INFO] Still searching... 18s elapsed
+2026-06-21 04:46:00,536 [WARNING] Basket not found after 20s search
+2026-06-21 04:46:00,537 [ERROR] Basket not found!
+2026-06-21 04:46:00,550 [INFO] Demo ended
+2026-06-21 04:48:56,795 [INFO] ============================================================
+2026-06-21 04:48:56,795 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:48:56,795 [INFO] ============================================================
+2026-06-21 04:48:56,801 [INFO] Initializing simulation...
+2026-06-21 04:48:57,870 [INFO] Initialization complete
+2026-06-21 04:48:57,870 [INFO] Letting robot settle...
+2026-06-21 04:48:58,392 [INFO] Robot stable, starting demo...
+2026-06-21 04:48:58,392 [INFO] 
+============================================================
+2026-06-21 04:48:58,392 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:48:58,392 [INFO] ============================================================
+2026-06-21 04:48:58,392 [INFO] Searching for balls...
+2026-06-21 04:48:58,429 [INFO] Found silver ball at distance 5.1cm
+2026-06-21 04:48:58,429 [INFO] 
+============================================================
+2026-06-21 04:48:58,429 [INFO] STATE: APPROACHING SILVER BALL
+2026-06-21 04:48:58,429 [INFO] ============================================================
+2026-06-21 04:48:58,429 [INFO] Approaching silver ball...
+2026-06-21 04:48:58,462 [INFO] Ball reached!
+2026-06-21 04:48:58,463 [INFO] 
+============================================================
+2026-06-21 04:48:58,463 [INFO] STATE: PICKING UP BALL
+2026-06-21 04:48:58,463 [INFO] ============================================================
+2026-06-21 04:48:58,463 [INFO] Executing pickup sequence with hook claw...
+2026-06-21 04:48:58,463 [INFO] Waiting for robot to settle...
+2026-06-21 04:48:58,724 [INFO] Step 1: Opening claw...
+2026-06-21 04:48:58,855 [INFO] Step 2: Lowering arm to ground...
+2026-06-21 04:48:58,855 [INFO] Moving arm to: [0, -35, -55, -25]
+2026-06-21 04:49:00,355 [INFO] Arm movement complete and stable
+2026-06-21 04:49:00,356 [INFO] Step 3: Closing claw to grip ball...
+2026-06-21 04:49:00,619 [INFO] Step 4: Lifting ball...
+2026-06-21 04:49:00,619 [INFO] Moving arm to: [0, 15, 25, 50]
+2026-06-21 04:49:02,120 [INFO] Arm movement complete and stable
+2026-06-21 04:49:02,120 [INFO] ✓ Pickup complete! Ball secured in claw.
+2026-06-21 04:49:02,120 [INFO] 
+============================================================
+2026-06-21 04:49:02,120 [INFO] STATE: SEARCHING FOR BASKET
+2026-06-21 04:49:02,120 [INFO] ============================================================
+2026-06-21 04:49:02,120 [INFO] Searching for basket (360° rotation)...
+2026-06-21 04:49:04,142 [INFO] Still searching... 2s elapsed
+2026-06-21 04:49:06,144 [INFO] Still searching... 4s elapsed
+2026-06-21 04:49:08,166 [INFO] Still searching... 6s elapsed
+2026-06-21 04:49:10,170 [INFO] Still searching... 8s elapsed
+2026-06-21 04:49:12,204 [INFO] Still searching... 10s elapsed
+2026-06-21 04:49:14,225 [INFO] Still searching... 12s elapsed
+2026-06-21 04:49:16,242 [INFO] Still searching... 14s elapsed
+2026-06-21 04:49:18,268 [INFO] Still searching... 16s elapsed
+2026-06-21 04:49:20,276 [INFO] Still searching... 18s elapsed
+2026-06-21 04:49:22,132 [WARNING] Basket not found after 20s search
+2026-06-21 04:49:22,132 [ERROR] Basket not found!
+2026-06-21 04:49:22,146 [INFO] Demo ended
+2026-06-21 04:54:16,928 [INFO] ============================================================
+2026-06-21 04:54:16,928 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:54:16,928 [INFO] ============================================================
+2026-06-21 04:54:16,934 [INFO] Initializing simulation...
+2026-06-21 04:54:18,106 [INFO] Initialization complete
+2026-06-21 04:54:18,106 [INFO] Letting robot settle...
+2026-06-21 04:54:18,640 [INFO] Robot stable, starting demo...
+2026-06-21 04:54:18,640 [INFO] 
+============================================================
+2026-06-21 04:54:18,640 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:54:18,640 [INFO] ============================================================
+2026-06-21 04:54:18,640 [INFO] Searching for balls...
+2026-06-21 04:54:18,674 [INFO] Found silver ball at distance 7.1cm
+2026-06-21 04:54:18,674 [INFO] 
+============================================================
+2026-06-21 04:54:18,674 [INFO] STATE: APPROACHING SILVER BALL
+2026-06-21 04:54:18,674 [INFO] ============================================================
+2026-06-21 04:54:18,674 [INFO] Approaching silver ball...
+2026-06-21 04:54:24,704 [WARNING] Lost sight of ball
+2026-06-21 04:54:24,704 [ERROR] Failed to approach ball!
+2026-06-21 04:54:24,717 [INFO] Demo ended
+2026-06-21 04:58:40,711 [INFO] ============================================================
+2026-06-21 04:58:40,711 [INFO] SAFE PICKUP & DEPOSIT DEMONSTRATION
+2026-06-21 04:58:40,711 [INFO] ============================================================
+2026-06-21 04:58:40,717 [INFO] Initializing simulation...
+2026-06-21 04:58:41,863 [INFO] Initialization complete
+2026-06-21 04:58:41,863 [INFO] Letting robot settle...
+2026-06-21 04:58:42,393 [INFO] Robot stable, starting demo...
+2026-06-21 04:58:42,393 [INFO] 
+============================================================
+2026-06-21 04:58:42,393 [INFO] STATE: SEARCHING FOR BALL
+2026-06-21 04:58:42,393 [INFO] ============================================================
+2026-06-21 04:58:42,393 [INFO] Searching for balls...
+2026-06-21 04:58:42,428 [INFO] Found silver ball at distance 7.1cm
+2026-06-21 04:58:42,429 [INFO] 
+============================================================
+2026-06-21 04:58:42,429 [INFO] STATE: APPROACHING SILVER BALL
+2026-06-21 04:58:42,429 [INFO] ============================================================
+2026-06-21 04:58:42,429 [INFO] Approaching silver ball...
+2026-06-21 04:58:48,471 [WARNING] Lost sight of ball
+2026-06-21 04:58:48,472 [ERROR] Failed to approach ball!
+2026-06-21 04:58:48,487 [INFO] Demo ended
+2026-06-21 06:08:42,071 [INFO] ============================================================
+2026-06-21 06:08:42,071 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:08:42,071 [INFO] ============================================================
+2026-06-21 06:08:42,078 [INFO] Initializing simulation...
+2026-06-21 06:08:43,035 [INFO] Initialization complete
+2026-06-21 06:08:43,035 [INFO] Letting robot settle...
+2026-06-21 06:08:43,564 [INFO] Robot stable, starting state machine...
+2026-06-21 06:08:43,600 [INFO] Safety: obstacle -> right
+2026-06-21 06:08:44,979 [INFO] Safety clear
+2026-06-21 06:08:45,982 [ERROR] Robot pitched over! Pitch: 33.4°
+2026-06-21 06:08:45,983 [ERROR] Robot became unstable: pitch
+2026-06-21 06:08:46,000 [INFO] Demo ended
+2026-06-21 06:09:01,284 [INFO] ============================================================
+2026-06-21 06:09:01,284 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:09:01,284 [INFO] ============================================================
+2026-06-21 06:09:01,291 [INFO] Initializing simulation...
+2026-06-21 06:09:02,446 [INFO] Initialization complete
+2026-06-21 06:09:02,446 [INFO] Letting robot settle...
+2026-06-21 06:09:02,973 [INFO] Robot stable, starting state machine...
+2026-06-21 06:09:03,005 [INFO] Safety: obstacle -> right
+2026-06-21 06:09:04,394 [INFO] Safety clear
+2026-06-21 06:09:05,245 [INFO] Safety: obstacle -> right
+2026-06-21 06:09:05,805 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:09:05,805 [ERROR] Robot became unstable: roll
+2026-06-21 06:09:05,826 [INFO] Demo ended
+2026-06-21 06:10:22,267 [INFO] ============================================================
+2026-06-21 06:10:22,267 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:10:22,267 [INFO] ============================================================
+2026-06-21 06:10:22,274 [INFO] Initializing simulation...
+2026-06-21 06:10:23,168 [INFO] Initialization complete
+2026-06-21 06:10:23,168 [INFO] Letting robot settle...
+2026-06-21 06:10:23,697 [INFO] Robot stable, starting state machine...
+2026-06-21 06:10:23,736 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:25,146 [INFO] Safety clear
+2026-06-21 06:10:26,115 [ERROR] Robot pitched over! Pitch: 33.4°
+2026-06-21 06:10:26,115 [ERROR] Robot became unstable: pitch
+2026-06-21 06:10:26,128 [INFO] Demo ended
+2026-06-21 06:10:30,780 [INFO] ============================================================
+2026-06-21 06:10:30,780 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:10:30,780 [INFO] ============================================================
+2026-06-21 06:10:30,786 [INFO] Initializing simulation...
+2026-06-21 06:10:31,837 [INFO] Initialization complete
+2026-06-21 06:10:31,837 [INFO] Letting robot settle...
+2026-06-21 06:10:32,369 [INFO] Robot stable, starting state machine...
+2026-06-21 06:10:32,396 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:33,881 [INFO] Safety clear
+2026-06-21 06:10:34,793 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:35,357 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:10:35,357 [ERROR] Robot became unstable: roll
+2026-06-21 06:10:35,373 [INFO] Demo ended
+2026-06-21 06:24:10,474 [INFO] ============================================================
+2026-06-21 06:24:10,474 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:24:10,474 [INFO] ============================================================
+2026-06-21 06:24:10,482 [INFO] Initializing simulation...
+2026-06-21 06:24:11,542 [INFO] Initialization complete
+2026-06-21 06:24:11,542 [INFO] Letting robot settle...
+2026-06-21 06:24:12,071 [INFO] Robot stable, starting state machine...
+2026-06-21 06:24:12,101 [INFO] Safety: obstacle -> right
+2026-06-21 06:24:13,548 [INFO] Safety clear
+2026-06-21 06:24:14,433 [INFO] Safety: obstacle -> right
+2026-06-21 06:24:14,975 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:24:14,975 [ERROR] Robot became unstable: roll
+2026-06-21 06:24:14,992 [INFO] Demo ended
