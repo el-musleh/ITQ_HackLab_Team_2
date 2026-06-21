@@ -39,9 +39,10 @@ APPROACH_SPEED   = 0.18   # forward speed while approaching
 CENTER_TOLERANCE = 30     # px offset from frame centre to consider "centred"
 CAP_BOTTOM_FRAC  = 0.80   # cap centre y / frame height to trigger grab (0=top, 1=bottom)
 
-# Basket (box) detection -- gray box: low saturation, mid brightness
-BOX_HSV_LOWER  = (0,   0,  60)    # any hue, near-zero saturation, not black
-BOX_HSV_UPPER  = (180, 60, 190)   # any hue, low saturation, not white
+# Basket (box) detection -- gray box, V4L2 green-tinted frames
+# Low saturation catches gray regardless of the green Bayer tint
+BOX_HSV_LOWER  = (0,   0,  40)    # any hue, near-zero saturation, not black
+BOX_HSV_UPPER  = (180, 80, 210)   # any hue, low saturation, not white
 BOX_MIN_AREA   = 500              # ignore tiny blobs
 BOX_DROP_AREA  = 6000             # area px^2 -> "close enough, deposit now"
 
