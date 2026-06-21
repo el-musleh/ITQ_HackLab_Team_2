@@ -23,7 +23,9 @@ class BallDetector:
         """
         if config and 'balls' in config:
             ball_config = config['balls']
-            self.color_ranges = ball_config.get('colors', self._default_colors())
+            # Convert config colors to numpy arrays
+            colors = ball_config.get('colors', {})
+            self.color_ranges = self._convert_color_ranges(colors) if colors else self._default_colors()
             self.min_area = ball_config.get('min_area_px', 100)
             self.validation_frames = ball_config.get('validation_frames', 3)
         else:
@@ -37,6 +39,16 @@ class BallDetector:
         # Distance estimation parameters (calibrate on-site)
         self.known_ball_diameter_cm = 3.5  # Bottle cap ~3.5 cm
         self.focal_length_px = 300  # Approximate, tune with calibration
+    
+    def _convert_color_ranges(self, colors_config):
+        """Convert color ranges from config (lists) to numpy arrays."""
+        converted = {}
+        for color_name, color_data in colors_config.items():
+            converted[color_name] = {
+                'hsv_lower': np.array(color_data['hsv_lower']),
+                'hsv_upper': np.array(color_data['hsv_upper'])
+            }
+        return converted
     
     def _default_colors(self):
         """Default HSV ranges for each ball color."""

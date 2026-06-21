@@ -52,10 +52,16 @@ Build an autonomous robot system to navigate a 175×180 cm arena, detect and col
 
 ### Platform
 - **Controller:** NVIDIA Jetson Nano 4GB
-- **Chassis:** Tracked, dual DC geared motors
-- **Arm:** 4-DOF servo-driven robotic arm
-- **Camera:** CSI IMX219 (160° FOV, 320×240 operational)
+- **Mobile Base:** 4-wheel skid-steer differential drive (tank steering)
+- **Robotic Arm:** 4-DOF articulated arm (Base Pan, Shoulder, Elbow, Wrist)
+- **Camera:** Single front-facing CSI IMX219 (160° FOV, 320×240 operational)
 - **Sensors:** Camera only (no ultrasonic)
+
+### Robot Dimensions
+- **Body Width (with wheels):** 19 cm
+- **Wheel Width:** 4 cm
+- **Body Length:** 17 cm
+- **Body Height:** 25 cm
 
 ### Component Ranges
 
@@ -63,8 +69,8 @@ Build an autonomous robot system to navigate a 175×180 cm arena, detect and col
 - **Resolution:** 320×240 (optimized for real-time)
 - **FOV:** 160° wide-angle
 - **Frame Rate:** 15-30 fps target
-- **Height:** ~120 mm from ground
-- **Mount:** Pan/tilt servos
+- **Quantity:** 1 (front-facing only)
+- **Mount:** Fixed front position
 
 #### Motors
 - **Type:** 2× DC geared motors with encoders
@@ -75,15 +81,13 @@ Build an autonomous robot system to navigate a 175×180 cm arena, detect and col
 #### Servos (SCSCtrl Protocol)
 | ID | Function | Model | Rotation Range | Safe Limits |
 |----|----------|-------|----------------|-------------|
-| 1 | Camera Pan | MG996R | 180° | ±90° |
-| 5 | Camera Tilt | MG996R | 180° | ±60° |
-| 2 | Arm Base | MG996R | 180° | ±90° |
+| 2 | Arm Base Pan | MG996R | 180° | ±90° |
 | 3 | Arm Shoulder | MG996R | 180° | ±80° |
 | 4 | Arm Elbow | MG996R | 180° | ±80° |
-| 6 | Gripper | SG90 | 90° | 0-90° |
+| 6 | Arm Wrist/Gripper | SG90 | 90° | 0-90° |
 
-#### Robotic Arm
-- **DOF:** 4 (base, shoulder, elbow, gripper)
+#### Robotic Arm (4-DOF)
+- **DOF:** 4 (Base Pan, Shoulder, Elbow, Wrist)
 - **Max Forward Reach:** ~180 mm
 - **Max Vertical Reach:** ~160 mm
 - **Gripper Opening:** 55 mm max

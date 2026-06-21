@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+<robot name="arena">
+  
+  <!-- Base link for arena -->
+  <link name="world">
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  
+  <!-- Ground Plane (shifted so corner is at origin) -->
+  <link name="ground">
+    <visual>
+      <geometry>
+        <box size="1.80 1.75 0.01"/>
+      </geometry>
+      <material name="floor">
+        <color rgba="0.8 0.8 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.80 1.75 0.01"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <!-- Ground positioned so (0,0) is at top-right corner -->
+  <joint name="ground_joint" type="fixed">
+    <parent link="world"/>
+    <child link="ground"/>
+    <origin xyz="0.9 0.875 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Boundary Wall - North (Yellow) -->
+  <link name="wall_north">
+    <visual>
+      <geometry>
+        <box size="1.80 0.02 0.10"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="1.0 1.0 0.0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.80 0.02 0.10"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="wall_north_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="wall_north"/>
+    <origin xyz="0 0.875 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Boundary Wall - South (Yellow) -->
+  <link name="wall_south">
+    <visual>
+      <geometry>
+        <box size="1.80 0.02 0.10"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.80 0.02 0.10"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="wall_south_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="wall_south"/>
+    <origin xyz="0 -0.875 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Boundary Wall - East (Yellow) -->
+  <link name="wall_east">
+    <visual>
+      <geometry>
+        <box size="0.02 1.75 0.10"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 1.75 0.10"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="wall_east_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="wall_east"/>
+    <origin xyz="0.90 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Boundary Wall - West (Yellow) -->
+  <link name="wall_west">
+    <visual>
+      <geometry>
+        <box size="0.02 1.75 0.10"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 1.75 0.10"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="wall_west_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="wall_west"/>
+    <origin xyz="-0.90 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Obstacle 1 (20x30 cm crate with yellow tape) -->
+  <link name="obstacle_1">
+    <visual>
+      <geometry>
+        <box size="0.30 0.20 0.15"/>
+      </geometry>
+      <material name="crate">
+        <color rgba="0.6 0.4 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.30 0.20 0.15"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="obstacle_1_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="obstacle_1"/>
+    <origin xyz="-0.40 0.40 0.075" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Yellow tape on obstacle 1 -->
+  <link name="obstacle_1_tape">
+    <visual>
+      <geometry>
+        <box size="0.31 0.21 0.02"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="obstacle_1_tape_joint" type="fixed">
+    <parent link="obstacle_1"/>
+    <child link="obstacle_1_tape"/>
+    <origin xyz="0 0 0.085" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Obstacle 2 (30x40 cm crate with yellow tape) -->
+  <link name="obstacle_2">
+    <visual>
+      <geometry>
+        <box size="0.40 0.30 0.15"/>
+      </geometry>
+      <material name="crate"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.40 0.30 0.15"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="obstacle_2_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="obstacle_2"/>
+    <origin xyz="0.40 -0.40 0.075" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Yellow tape on obstacle 2 -->
+  <link name="obstacle_2_tape">
+    <visual>
+      <geometry>
+        <box size="0.41 0.31 0.02"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="obstacle_2_tape_joint" type="fixed">
+    <parent link="obstacle_2"/>
+    <child link="obstacle_2_tape"/>
+    <origin xyz="0 0 0.085" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gray Basket (center of arena) -->
+  <link name="basket">
+    <visual>
+      <geometry>
+        <cylinder radius="0.15" length="0.12"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.15" length="0.12"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="basket_joint" type="fixed">
+    <parent link="ground"/>
+    <child link="basket"/>
+    <!-- Basket at arena center (ground is shifted, so center is at 0,0 in ground frame) -->
+    <origin xyz="0 0 0.06" rpy="0 0 0"/>
+  </joint>
+
+</robot>

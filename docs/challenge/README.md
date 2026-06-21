@@ -33,12 +33,10 @@ The JETANK AI Kit is a tracked mobile robot platform designed for NVIDIA Jetson 
 ## 2. Mechanical Structure
 
 ### 2.1 Body Dimensions
-- **Total Length:** ~260 mm
-- **Total Width:** ~200 mm
-- **Total Height:** ~140 mm (without arm)
-- **Ground Clearance:** ~25 mm
-- **Track Width:** ~40 mm each
-- **Wheelbase:** ~160 mm
+- **Body Length:** 17 cm
+- **Body Width (with wheels):** 19 cm
+- **Wheel Width:** 4 cm
+- **Body Height:** 25 cm
 
 ### 2.2 Chassis Material
 - CNC‑machined aluminum alloy
@@ -48,40 +46,41 @@ The JETANK AI Kit is a tracked mobile robot platform designed for NVIDIA Jetson 
 
 ## 3. Motors & Servos
 
-### 3.1 Drive Motors
-- **Type:** Dual high‑torque DC gear motors
+### 3.1 Drive System
+- **Type:** 4-wheel skid-steer differential drive (tank steering)
+- **Motors:** Dual high‑torque DC gear motors
 - **Voltage:** 6–12 V
 - **Encoder:** Yes (optical encoder)
 - **Motor Count:** 2
 
-### 3.2 Servo Motors (Arm Version Only)
-If you have the **4‑DOF robotic arm version**, it includes:
+### 3.2 Robotic Arm (4-DOF)
+The robot includes a **4-DOF articulated arm**:
 
 | Joint | Servo Model | Count | Rotation Range |
 |------|-------------|--------|----------------|
-| Base rotation | MG996R | 1 | 180° |
+| Base Pan | MG996R | 1 | 180° |
 | Shoulder | MG996R | 1 | 180° |
 | Elbow | MG996R | 1 | 180° |
-| Gripper | SG90 | 1 | 90° |
+| Wrist | SG90 | 1 | 90° |
 
 - **Total Servos:** 4
-- **Total DOF:** 4
+- **Total DOF:** 4 (Base Pan, Shoulder, Elbow, Wrist)
 
 ---
 
 ## 4. Sensors
 
 ### 4.1 Vision
-- **Camera:** 8MP IMX219 (Jetson Nano CSI camera)
+- **Camera:** Single front-facing 8MP IMX219 (Jetson Nano CSI camera)
 - **FOV:** 160° wide‑angle
 - **Resolution:** 3280×2464
+- **Quantity:** 1 (front-facing only)
 
 ### 4.2 IMU
 - **6‑axis IMU:** Accelerometer + Gyroscope
 
 ### 4.3 Other Sensors
 - Motor encoders
-- Optional ultrasonic module (depending on kit version)
 
 ---
 
@@ -101,10 +100,7 @@ If you have the **4‑DOF robotic arm version**, it includes:
 
 ## 6. Distances & Clearances
 
-### 6.1 Camera Height
-- **Camera height from ground:** ~120 mm
-
-### 6.2 Arm Reach (Arm Version)
+### 6.1 Arm Reach (4-DOF Articulated Arm)
 - **Max forward reach:** ~180 mm
 - **Max vertical reach:** ~160 mm
 - **Gripper opening:** 55 mm
