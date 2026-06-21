@@ -158,7 +158,9 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 .
 ├── README.md                    # This file
 ├── setup.sh                     # One-command setup for all team members
-├── requirements.txt             # Python dependencies
+├── setup.cfg                    # Setuptools config (egg-info location)
+├── requirements.txt             # Python runtime dependencies
+├── requirements-dev.txt         # Dev/test dependencies (pytest, etc.)
 ├── config.yaml                  # Camera thresholds, PID gains, course params
 ├── pytest.ini                   # Test configuration
 │
@@ -286,16 +288,16 @@ jupyter notebook --ip=0.0.0.0 --port=8888
 **What `setup.sh` does:**
 1. Installs system dependencies (`python3-pip`, `git`, `libgl1`, etc.)
 2. Creates a Python virtual environment (`venv/`)
-3. Installs Python packages (OpenCV, NumPy, PySerial, Ultralytics, Jupyter)
+3. Installs Python packages from `requirements.txt` + `requirements-dev.txt`
 4. Installs the `SCSCtrl` servo library from local source
 5. Creates the project directory structure
-6. Generates starter files (`src/main.py`, `config.yaml`)
-7. Verifies all installations
+6. Verifies all installations
 
 ### Manual Dependencies (if setup.sh fails)
 ```bash
 # Core (Jetson-optimized)
-pip install opencv-python numpy matplotlib pyserial imutils
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # JETANK servo control
 pip install -e .  # from project root, installs SCSCtrl

@@ -54,7 +54,6 @@ Keep these files in the project root:
 - `config.yaml`
 - `pytest.ini`
 - `config.sh`
-- `install.sh`
 - `setup.sh`
 - `.gitignore`
 

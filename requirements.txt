@@ -1,0 +1,17 @@
+# ITQ Bottle Cap Collector — Runtime Dependencies
+# Install: pip install -r requirements.txt
+#
+# NOTE: On Jetson Nano (Python 3.6 / ARM64), some packages
+# may need wheels from https://forums.developer.nvidia.com
+# or be built from source. See setup.sh for Jetson-specific steps.
+
+opencv-python>=4.5.0
+numpy>=1.19.0
+matplotlib>=3.3.0
+pyserial>=3.5
+imutils>=0.5.4
+requests>=2.25.0
+pyyaml>=5.4
+jupyter>=1.0.0
+ipywidgets>=7.6.0
+traitlets>=4.3.0

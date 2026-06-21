@@ -40,14 +40,13 @@ sudo apt-get install -y \
     git \
     htop \
     i2c-tools \
-    libi2c-dev \
-    2>/dev/null || true
+    libi2c-dev
 
 # Fix serial port permissions if on Jetson
 if [ "$IS_JETSON" = true ]; then
     echo -e "${YELLOW}Fixing /dev/ttyTHS1 permissions...${NC}"
     sudo usermod -aG dialout $USER
-    sudo chmod 777 /dev/ttyTHS1 2>/dev/null || true
+    sudo chmod 666 /dev/ttyTHS1 2>/dev/null || true
 fi
 
 echo -e "${GREEN}System dependencies installed.${NC}"
@@ -80,17 +79,8 @@ echo -e "${YELLOW}[3/6] Installing Python packages...${NC}"
 
 # Core dependencies
 pip install --upgrade pip
-pip install \
-    opencv-python \
-    numpy \
-    matplotlib \
-    pyserial \
-    imutils \
-    requests \
-    pyyaml \
-    jupyter \
-    ipywidgets \
-    traitlets
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Detection (optional — color blob may be enough)
 echo -e "${YELLOW}Installing Ultralytics YOLO (this may take a while)...${NC}"
@@ -145,97 +135,12 @@ touch \
     src/hardware/__init__.py \
     src/utils/__init__.py
 
-# Create starter files if they don't exist
-[ ! -f "src/main.py" ] && cat > src/main.py << 'PYEOF'
-#!/usr/bin/env python3
-"""Entry point for ITQ Bottle Cap Collector.
-
-Run on NVIDIA Jetson Nano via Jupyter or command line.
-"""
-
-import sys
-import time
-from src.perception.detector import CapDetector
-from src.hardware.chassis import Chassis
-from src.hardware.arm import Arm
-from src.control.state_machine import StateMachine
-
-def main():
-    print("=" * 50)
-    print("ITQ Bottle Cap Collector — Team 2")
-    print("=" * 50)
-    
-    # Initialize hardware
-    detector = CapDetector()
-    chassis = Chassis()
-    arm = Arm()
-    state_machine = StateMachine(detector, chassis, arm)
-    
-    print("Hardware initialized. Starting state machine...")
-    print("Press Ctrl+C to stop.\n")
-    
-    try:
-        while True:
-            state_machine.tick()
-            time.sleep(0.05)  # 20 Hz control loop
-    except KeyboardInterrupt:
-        print("\nShutting down...")
-        chassis.stop()
-        arm.reset()
-        sys.exit(0)
-
-if __name__ == "__main__":
-    main()
-PYEOF
-
-[ ! -f "config.yaml" ] && cat > config.yaml << 'YAMLEOF'
-# ITQ Bottle Cap Collector — Configuration
-
-# Camera settings
-camera:
-  width: 320
-  height: 240
-  fps: 30
-  source: 0  # CSI camera on Jetson
-
-# Color detection (HSV)
-# Adjust these on-site during calibration!
-color:
-  lower_hsv: [24, 100, 100]   # H, S, V min
-  upper_hsv: [44, 255, 255]  # H, S, V max
-  # Example presets:
-  # yellow: [24, 100, 100] to [44, 255, 255]
-  # red:    [160, 100, 100] to [180, 255, 255]
-  # green:  [50, 200, 100] to [70, 255, 255]
-  # blue:   [110, 180, 200] to [135, 225, 255]
-
-# State machine tuning
-state_machine:
-  approach_distance_px: 50    # Stop when cap fills this many pixels
-  search_rotate_speed: 30      # Degrees per second while searching
-  approach_speed: 40           # Motor speed during approach
-  recovery_timeout_sec: 5      # Back up if stuck for N seconds
-
-# PID controller
-pid:
-  kp: 3.0   # Proportional gain
-  ki: 0.0   # Integral gain
-  kd: 0.5   # Derivative gain
-
-# Servo IDs (JETANK hardware)
-servos:
-  pan: 1     # Camera pan servo
-  tilt: 5    # Camera tilt servo
-  arm_base: 2
-  arm_shoulder: 3
-  arm_elbow: 4
-  gripper: 6
-
-# Serial port
-serial:
-  port: /dev/ttyTHS1
-  baudrate: 1000000
-YAMLEOF
+# Optional: Copy JETANK tutorial notebooks to JetBot workspace (if present)
+if [ -d "/workspace/jetbot/notebooks" ] && [ -d "notebooks/jetank" ]; then
+    echo -e "${YELLOW}Copying JETANK tutorial notebooks to JetBot workspace...${NC}"
+    cp -r notebooks/jetank/JETANK_* /workspace/jetbot/notebooks/ 2>/dev/null || true
+    echo -e "${GREEN}JETANK notebooks copied.${NC}"
+fi
 
 echo -e "${GREEN}Project structure created.${NC}"
 echo ""
@@ -278,7 +183,7 @@ if [ "$IS_JETSON" = true ]; then
     echo "  1. Activate venv:  source venv/bin/activate"
     echo "  2. Start Jupyter:    jupyter notebook --ip=0.0.0.0 --port=8888"
     echo "  3. Open browser:     http://<jetson-ip>:8888"
-    echo "  4. Open notebooks/01_calibrate.ipynb"
+    echo "  4. Open notebooks/00_calibrate_basket.ipynb"
     echo ""
     echo -e "${YELLOW}IMPORTANT:${NC} Log out and back in (or reboot) to apply dialout group permissions."
 else
@@ -286,7 +191,7 @@ else
     echo "  1. Activate venv:  source venv/bin/activate"
     echo "  2. Edit code in:     src/"
     echo "  3. Test modules:     python3 -m pytest tests/"
-    echo "  4. When ready, push: git push origin elmusleh"
+    echo "  4. When ready, push: git push origin develop"
     echo ""
     echo "  (This is a dev environment — robot hardware only works on the Jetson Nano)"
 fi

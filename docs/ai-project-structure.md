@@ -10,10 +10,12 @@ ITQ_HackLab_Team_2/
 ├── README.md                    # Project overview (stays in root)
 ├── LICENSE                      # License file (stays in root)
 ├── setup.py                     # Package install config (stays in root)
+├── setup.cfg                    # Setuptools config (stays in root)
+├── requirements.txt             # Runtime dependencies (stays in root)
+├── requirements-dev.txt         # Dev/test dependencies (stays in root)
 ├── config.yaml                  # Runtime configuration (stays in root)
 ├── pytest.ini                   # Test configuration (stays in root)
 ├── config.sh                    # Shell scripts (stays in root)
-├── install.sh
 ├── setup.sh
 ├── .gitignore
 │

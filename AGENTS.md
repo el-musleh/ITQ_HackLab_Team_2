@@ -9,7 +9,7 @@
 | `.md` | `docs/` | `README.md`, `LICENSE`, `AGENTS.md` |
 | `.py` | `src/` | `setup.py` |
 | `.ipynb` | `notebooks/` | None |
-| Config (`.yaml`, `.ini`, `.sh`) | Root | — |
+| Config (`.yaml`, `.ini`, `.sh`, `.cfg`, `.txt`) | Root | — |
 | Tests (`.py`) | `tests/` | — |
 
 ## Full Structure Guide
