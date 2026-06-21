@@ -314,3 +314,66 @@
 2026-06-21 04:58:48,471 [WARNING] Lost sight of ball
 2026-06-21 04:58:48,472 [ERROR] Failed to approach ball!
 2026-06-21 04:58:48,487 [INFO] Demo ended
+2026-06-21 06:08:42,071 [INFO] ============================================================
+2026-06-21 06:08:42,071 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:08:42,071 [INFO] ============================================================
+2026-06-21 06:08:42,078 [INFO] Initializing simulation...
+2026-06-21 06:08:43,035 [INFO] Initialization complete
+2026-06-21 06:08:43,035 [INFO] Letting robot settle...
+2026-06-21 06:08:43,564 [INFO] Robot stable, starting state machine...
+2026-06-21 06:08:43,600 [INFO] Safety: obstacle -> right
+2026-06-21 06:08:44,979 [INFO] Safety clear
+2026-06-21 06:08:45,982 [ERROR] Robot pitched over! Pitch: 33.4°
+2026-06-21 06:08:45,983 [ERROR] Robot became unstable: pitch
+2026-06-21 06:08:46,000 [INFO] Demo ended
+2026-06-21 06:09:01,284 [INFO] ============================================================
+2026-06-21 06:09:01,284 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:09:01,284 [INFO] ============================================================
+2026-06-21 06:09:01,291 [INFO] Initializing simulation...
+2026-06-21 06:09:02,446 [INFO] Initialization complete
+2026-06-21 06:09:02,446 [INFO] Letting robot settle...
+2026-06-21 06:09:02,973 [INFO] Robot stable, starting state machine...
+2026-06-21 06:09:03,005 [INFO] Safety: obstacle -> right
+2026-06-21 06:09:04,394 [INFO] Safety clear
+2026-06-21 06:09:05,245 [INFO] Safety: obstacle -> right
+2026-06-21 06:09:05,805 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:09:05,805 [ERROR] Robot became unstable: roll
+2026-06-21 06:09:05,826 [INFO] Demo ended
+2026-06-21 06:10:22,267 [INFO] ============================================================
+2026-06-21 06:10:22,267 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:10:22,267 [INFO] ============================================================
+2026-06-21 06:10:22,274 [INFO] Initializing simulation...
+2026-06-21 06:10:23,168 [INFO] Initialization complete
+2026-06-21 06:10:23,168 [INFO] Letting robot settle...
+2026-06-21 06:10:23,697 [INFO] Robot stable, starting state machine...
+2026-06-21 06:10:23,736 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:25,146 [INFO] Safety clear
+2026-06-21 06:10:26,115 [ERROR] Robot pitched over! Pitch: 33.4°
+2026-06-21 06:10:26,115 [ERROR] Robot became unstable: pitch
+2026-06-21 06:10:26,128 [INFO] Demo ended
+2026-06-21 06:10:30,780 [INFO] ============================================================
+2026-06-21 06:10:30,780 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:10:30,780 [INFO] ============================================================
+2026-06-21 06:10:30,786 [INFO] Initializing simulation...
+2026-06-21 06:10:31,837 [INFO] Initialization complete
+2026-06-21 06:10:31,837 [INFO] Letting robot settle...
+2026-06-21 06:10:32,369 [INFO] Robot stable, starting state machine...
+2026-06-21 06:10:32,396 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:33,881 [INFO] Safety clear
+2026-06-21 06:10:34,793 [INFO] Safety: obstacle -> right
+2026-06-21 06:10:35,357 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:10:35,357 [ERROR] Robot became unstable: roll
+2026-06-21 06:10:35,373 [INFO] Demo ended
+2026-06-21 06:24:10,474 [INFO] ============================================================
+2026-06-21 06:24:10,474 [INFO] SAFE AUTONOMOUS PICKUP & DEPOSIT (State Machine)
+2026-06-21 06:24:10,474 [INFO] ============================================================
+2026-06-21 06:24:10,482 [INFO] Initializing simulation...
+2026-06-21 06:24:11,542 [INFO] Initialization complete
+2026-06-21 06:24:11,542 [INFO] Letting robot settle...
+2026-06-21 06:24:12,071 [INFO] Robot stable, starting state machine...
+2026-06-21 06:24:12,101 [INFO] Safety: obstacle -> right
+2026-06-21 06:24:13,548 [INFO] Safety clear
+2026-06-21 06:24:14,433 [INFO] Safety: obstacle -> right
+2026-06-21 06:24:14,975 [ERROR] Robot rolled over! Roll: -30.0°
+2026-06-21 06:24:14,975 [ERROR] Robot became unstable: roll
+2026-06-21 06:24:14,992 [INFO] Demo ended
