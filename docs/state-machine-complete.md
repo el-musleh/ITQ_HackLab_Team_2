@@ -76,13 +76,19 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 
 **Behavior**:
 - Center camera
-- Check for balls in current view
-- Select target ball if available
-- Register detected ball in WorldMap (with color and world coordinates)
-- Link `world_id` to `current_ball` for collection tracking
+- Detect balls using validated detections (multi-frame validation + obstacle cross-check)
+- Sort detected balls by distance (nearest first)
+- For each ball:
+  - Register in WorldMap (with color and world coordinates)
+  - If registration succeeds (ball inside arena bounds) → select as target, link `world_id` to `current_ball`
+  - If registration fails (ball outside arena bounds) → skip and try next ball:
+    - If yellow boundary tape visible in frame → ball confirmed outside arena, log and skip
+    - If boundary not visible → position estimate may be wrong, log and skip
+- If no valid ball found → fall through to BALLS_LEFT / BLIND_SPOT / END
 
 **Exit Conditions**:
-- Ball in view → COLLECT_BALL
+- Valid ball in view (inside arena) → COLLECT_BALL
+- All detected balls out of bounds → BALLS_LEFT
 - No ball in view → BALLS_LEFT
 
 **Timeout**: 2 seconds
@@ -239,7 +245,8 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 | IDLE            | Timeout + failures           | END (fatal)     |
 | WANDERING       | Sweep complete               | CHECK_FOR_BALL  |
 | WANDERING       | Timeout                      | CHECK_FOR_BALL  |
-| CHECK_FOR_BALL  | Ball in view                 | COLLECT_BALL    |
+| CHECK_FOR_BALL  | Ball in view (inside arena)  | COLLECT_BALL    |
+| CHECK_FOR_BALL  | Ball outside arena (skipped) | BALLS_LEFT      |
 | CHECK_FOR_BALL  | No ball in view              | BALLS_LEFT      |
 | COLLECT_BALL    | Success (all sub-states)     | CHECK_FOR_BALL  |
 | COLLECT_BALL    | Failure (any sub-state)      | RECOVERY        |
@@ -333,8 +340,8 @@ stateDiagram-v2
     IDLE --> WANDERING : sensors ready
     IDLE --> END : fatal error
     WANDERING --> CHECK_FOR_BALL : sweep complete
-    CHECK_FOR_BALL --> COLLECT_BALL : ball in view
-    CHECK_FOR_BALL --> BALLS_LEFT : no ball
+    CHECK_FOR_BALL --> COLLECT_BALL : ball in view (in bounds)
+    CHECK_FOR_BALL --> BALLS_LEFT : no ball / all out of bounds
     COLLECT_BALL --> CHECK_FOR_BALL : success
     COLLECT_BALL --> RECOVERY : failure
     RECOVERY --> COLLECT_BALL : retry

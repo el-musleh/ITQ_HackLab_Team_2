@@ -299,6 +299,37 @@ ITQ_HackLab_Team_2/
 
 ---
 
+## Recent Enhancements (June 21, 2026)
+
+### Out-of-Bounds Ball Handling ✓
+
+**Problem:** Robot would attempt to collect balls detected by camera but whose estimated world position was outside the arena boundary.
+
+**Solution:** `CHECK_FOR_BALL` now iterates all detected balls (sorted by distance) and skips any whose world position is outside arena bounds (rejected by `WorldMap.register_ball`). If yellow boundary tape is visible in the same frame, the ball is confirmed outside. Tries remaining balls before falling through to `BALLS_LEFT`/`BLIND_SPOT`/`END`.
+
+**Files modified:** `src/control/state_machine.py`, `tests/mocks.py`, `tests/test_state_machine.py`
+
+### Ball Detection Robustness ✓
+
+**Problem:** HSV-based detection was vulnerable to false positives from glare, reflections, and bright surfaces. No size limit relative to claw capacity.
+
+**Solution:** Five improvements:
+1. **Multi-frame validation** — `validate_detection()` (3 consecutive frames) wired into all 4 detection call sites
+2. **Max size check** — Objects with estimated real diameter > 5cm (claw limit) rejected via pinhole model
+3. **Aspect ratio check** — Bounding box `w/h` must be 0.6–1.4 (balls are roughly square)
+4. **Obstacle cross-validation** — Ball detections overlapping yellow tape pixels rejected via `ObstacleDetector.get_yellow_mask()`
+5. **Tighter silver HSV** — `V_min` 150→180, `S_max` 30→25 to reduce bright surface false positives
+
+**Files modified:** `src/perception/ball_detector.py`, `src/perception/obstacle_detector.py`, `src/control/state_machine.py`, `config.yaml`, `tests/mocks.py`, `tests/test_state_machine.py`
+
+### YOLOv8 Future Enhancement (Documented)
+
+YOLOv8n with TensorRT is feasible on Jetson Nano (10-15 FPS) and would improve detection robustness in varied lighting. The `ultralytics` package is already installed. See `docs/yolov8-future-enhancement.md` for full feasibility analysis, comparison table, and integration approach.
+
+**Status:** Documented only — not implemented. HSV detection with robustness improvements is sufficient for competition.
+
+---
+
 ## 📝 Configuration Tuning Guide
 
 ### If balls not detected:
