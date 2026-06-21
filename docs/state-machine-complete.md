@@ -441,6 +441,11 @@ safety:
 ### Ball Tracking
 
 - **Registration**: Balls detected during WANDERING and CHECK_FOR_BALL are registered with world coordinates and color
+- **Multi-frame validation**: Detections must appear in `validation_frames` (default 3) consecutive frames before being accepted — eliminates single-frame false positives from glare/reflections
+- **Obstacle cross-validation**: Ball detections whose centroid overlaps with yellow tape pixels (from `ObstacleDetector.get_yellow_mask`) are rejected as false positives
+- **Size check**: Objects with estimated real-world diameter > `max_ball_diameter_cm` (5.0cm, claw limit) are rejected
+- **Aspect ratio**: Ball bounding box must be roughly 1:1 (`0.6 ≤ w/h ≤ 1.4`) — filters elongated shapes
+- **Circularity**: Contour circularity (`4π·area / perimeter²`) must be ≥ 0.5
 - **Merging**: Duplicate detections within 10 cm are merged (confidence-weighted position averaging)
 - **Color storage**: Ball color is stored in the registry, enabling visual re-identification during approach
 - **world_id linkage**: `world_id` is linked to `current_ball` during CHECK_FOR_BALL and updated during APPROACH, so `mark_collected()` works for both direct and map-sourced collections

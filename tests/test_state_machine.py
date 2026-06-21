@@ -509,6 +509,93 @@ class TestOutOfBoundsBallHandling:
         assert sm.current_ball is not None
 
 
+class TestBallDetectionRobustness:
+    """Test ball detection robustness improvements."""
+
+    def test_validation_wired_in_check_for_ball(self):
+        """Multi-frame validation is called during CHECK_FOR_BALL."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 30, 500),
+        ])
+        mocks['pose'][0] = 0.9
+        mocks['pose'][1] = 0.875
+        mocks['pose'][2] = 0.0
+
+        sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert mocks['ball_detector']._validation_calls > 0
+
+    def test_validation_wired_in_approach(self):
+        """Multi-frame validation is called during APPROACH."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_APPROACH
+        sm.collect_sub_start = time.time()
+        sm.current_ball = {'color': 'red', 'cx': 160, 'cy': 120,
+                           'distance': 30, 'area': 500, 'world_id': 0}
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 30, 500),
+        ])
+        mocks['pose'][0] = 0.9
+        mocks['pose'][1] = 0.875
+        mocks['pose'][2] = 0.0
+
+        sm._sub_approach(frame, tuple(mocks['pose']))
+        assert mocks['ball_detector']._validation_calls > 0
+
+    def test_empty_validation_returns_no_balls(self):
+        """When validate_detection returns empty, no COLLECT_BALL."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        # Override validate_detection to return empty
+        mocks['ball_detector'].validate_detection = lambda d: []
+
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 30, 500),
+        ])
+        mocks['pose'][0] = 0.9
+        mocks['pose'][1] = 0.875
+        mocks['pose'][2] = 0.0
+
+        result = sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert result != COLLECT_BALL
+
+    def test_in_bounds_ball_still_collected_with_validation(self):
+        """Normal ball with pass-through validation still gets collected."""
+        sm, mocks = create_test_state_machine()
+        sm.state = CHECK_FOR_BALL
+        sm.state_start_time = time.time()
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+
+        mocks['ball_detector'].set_test_balls([
+            ('red', (160, 120), 30, 500),
+        ])
+        mocks['pose'][0] = 0.9
+        mocks['pose'][1] = 0.875
+        mocks['pose'][2] = 0.0
+
+        result = sm._state_check_for_ball(frame, tuple(mocks['pose']))
+        assert result == COLLECT_BALL
+        assert sm.current_ball is not None
+
+
 # Run tests if executed directly
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

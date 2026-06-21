@@ -26,10 +26,13 @@ balls:
       hsv_lower: [170, 150, 50]
       hsv_upper: [180, 255, 255]
     silver:
-      hsv_lower: [0, 0, 150]
-      hsv_upper: [180, 30, 255]
+      hsv_lower: [0, 0, 180]
+      hsv_upper: [180, 25, 255]
   min_area_px: 100
   validation_frames: 3
+  max_ball_diameter_cm: 5.0    # Claw opening limit
+  min_aspect_ratio: 0.6        # Ball bounding box w/h ratio
+  max_aspect_ratio: 1.4
 
 # Basket (calibrated at runtime)
 basket:

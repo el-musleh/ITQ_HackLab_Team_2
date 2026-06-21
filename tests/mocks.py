@@ -154,11 +154,17 @@ class MockBallDetector:
     def __init__(self, config=None):
         self.config = config or {}
         self.test_balls = []
+        self._validation_calls = 0
         
     def detect(self, frame):
         """Detect balls in frame."""
         return self.test_balls
-        
+    
+    def validate_detection(self, detections):
+        """Pass-through validation for testing (returns detections as-is)."""
+        self._validation_calls += 1
+        return list(detections) if detections else []
+    
     def set_test_balls(self, balls):
         """Set test ball detections."""
         self.test_balls = balls
@@ -199,6 +205,10 @@ class MockObstacleDetector:
         if self.test_boundary:
             return True, 'reverse', 2000
         return False, 'none', 0
+
+    def get_yellow_mask(self, frame):
+        """Return mock yellow mask (None = no cross-validation)."""
+        return None
 
     def detect_combined(self, frame):
         """Detect obstacles and boundaries."""

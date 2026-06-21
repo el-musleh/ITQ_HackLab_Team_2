@@ -28,10 +28,16 @@ class BallDetector:
             self.color_ranges = self._convert_color_ranges(colors) if colors else self._default_colors()
             self.min_area = ball_config.get('min_area_px', 100)
             self.validation_frames = ball_config.get('validation_frames', 3)
+            self.max_ball_diameter_cm = ball_config.get('max_ball_diameter_cm', 5.0)
+            self.min_aspect_ratio = ball_config.get('min_aspect_ratio', 0.6)
+            self.max_aspect_ratio = ball_config.get('max_aspect_ratio', 1.4)
         else:
             self.color_ranges = self._default_colors()
             self.min_area = 100
             self.validation_frames = 3
+            self.max_ball_diameter_cm = 5.0
+            self.min_aspect_ratio = 0.6
+            self.max_aspect_ratio = 1.4
         
         # Multi-frame validation buffer
         self.detection_buffer = deque(maxlen=self.validation_frames)
@@ -65,9 +71,9 @@ class BallDetector:
                 'hsv_lower': np.array([170, 150, 50]),
                 'hsv_upper': np.array([180, 255, 255])
             },
-            'silver': {  # Low saturation, high value
-                'hsv_lower': np.array([0, 0, 150]),
-                'hsv_upper': np.array([180, 30, 255])
+            'silver': {  # Low saturation, high value (tightened)
+                'hsv_lower': np.array([0, 0, 180]),
+                'hsv_upper': np.array([180, 25, 255])
             }
         }
     
@@ -146,6 +152,14 @@ class BallDetector:
             if circularity < 0.5:  # Not circular enough
                 continue
             
+            # Aspect ratio check (balls should be roughly square)
+            x, y, w, h = cv2.boundingRect(contour)
+            if h == 0:
+                continue
+            aspect_ratio = w / h
+            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
+                continue
+            
             # Calculate centroid
             M = cv2.moments(contour)
             if M['m00'] == 0:
@@ -157,6 +171,13 @@ class BallDetector:
             
             # Estimate distance from pixel area
             distance_cm = self._estimate_distance(area)
+            
+            # Max size check: reject objects larger than claw capacity
+            pixel_diameter = 2 * np.sqrt(area / np.pi)
+            if distance_cm > 0 and self.focal_length_px > 0:
+                real_diameter_cm = (pixel_diameter * distance_cm) / self.focal_length_px
+                if real_diameter_cm > self.max_ball_diameter_cm:
+                    continue
             
             detections.append((color_name, centroid, distance_cm, area))
         

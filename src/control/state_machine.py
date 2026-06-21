@@ -381,11 +381,15 @@ class StateMachine:
                             self.world_map.set_basket_position(bx, by)
                             self._log(f'Basket world pos estimated: ({bx:.2f}, {by:.2f})')
 
-        # Register balls seen in current frame
+        # Register balls seen in current frame (use validated detections)
         if frame is not None and pose is not None:
-            balls = self.ball_detector.detect(frame)
+            raw_balls = self.ball_detector.detect(frame)
+            balls = self.ball_detector.validate_detection(raw_balls)
+            yellow_mask = self._get_yellow_mask(frame)
             pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
             for ball in balls:
+                if self._ball_overlaps_yellow(ball, yellow_mask):
+                    continue
                 self.world_map.register_ball_from_detection(ball, pose, camera_pan_deg=pan)
 
         # Initialize sweep state
@@ -436,11 +440,36 @@ class StateMachine:
             return CHECK_FOR_BALL
         return WANDERING
 
+    def _get_yellow_mask(self, frame):
+        """Get yellow obstacle mask, or None if unavailable."""
+        if not hasattr(self.obstacle_detector, 'get_yellow_mask'):
+            return None
+        return self.obstacle_detector.get_yellow_mask(frame)
+
+    def _ball_overlaps_yellow(self, ball, yellow_mask):
+        """Check if a ball detection centroid falls on yellow tape pixels."""
+        if yellow_mask is None:
+            return False
+        _, (cx, cy), _, _ = ball
+        h, w = yellow_mask.shape[:2]
+        if 0 <= cx < w and 0 <= cy < h:
+            return yellow_mask[cy, cx] > 0
+        return False
+
+    def _validated_balls(self, frame):
+        """Return validated ball detections, filtered by obstacle cross-check."""
+        raw = self.ball_detector.detect(frame)
+        validated = self.ball_detector.validate_detection(raw)
+        if not validated:
+            return []
+        yellow_mask = self._get_yellow_mask(frame)
+        return [b for b in validated if not self._ball_overlaps_yellow(b, yellow_mask)]
+
     def _state_check_for_ball(self, frame, pose):
         self.camera.center()
         if frame is None:
             return BALLS_LEFT
-        balls = self.ball_detector.detect(frame)
+        balls = self._validated_balls(frame)
         if balls:
             balls_sorted = sorted(balls, key=lambda b: b[2])
             for ball in balls_sorted:
@@ -501,7 +530,7 @@ class StateMachine:
     def _sub_approach(self, frame, pose):
         if frame is None:
             return RECOVERY
-        balls = self.ball_detector.detect(frame)
+        balls = self._validated_balls(frame)
         if not balls:
             lost_time = self.state_data.get('lost_time')
             if lost_time is None:
@@ -802,7 +831,7 @@ class StateMachine:
         if reached:
             self._set_motors(0, 0)
             if frame is not None:
-                balls = self.ball_detector.detect(frame)
+                balls = self._validated_balls(frame)
                 pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
                 for ball in balls:
                     self.world_map.register_ball_from_detection(ball, pose, camera_pan_deg=pan)

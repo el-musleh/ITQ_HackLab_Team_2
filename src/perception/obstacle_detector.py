@@ -37,6 +37,25 @@ class ObstacleDetector:
         self.front_roi_top_frac = 0.15  # Front obstacle zone: 15% to 65%
         self.front_roi_bottom_frac = 0.65
     
+    def get_yellow_mask(self, frame):
+        """
+        Return full-frame yellow HSV mask for cross-validation.
+
+        Used to check if a ball detection centroid overlaps with
+        yellow tape pixels (indicating a false positive).
+
+        Args:
+            frame: BGR image from camera
+
+        Returns:
+            Binary mask (same size as frame) where yellow pixels are 255.
+        """
+        if frame is None or frame.size == 0:
+            return None
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, self.yellow_lower, self.yellow_upper)
+        return mask
+
     def detect_boundary(self, frame):
         """
         Detect yellow boundary tape (arena edges).
