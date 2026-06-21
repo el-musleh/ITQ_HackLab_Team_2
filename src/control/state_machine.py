@@ -11,6 +11,10 @@ import math
 import time
 
 from src.control.pid import DualPIDController
+from src.control.safety_monitor import SafetyMonitor, SafetyIssue
+from src.control.safety_monitor import (REASON_STUCK, REASON_DARK_FRAME,
+                                         REASON_ARM_COLLISION,
+                                         REASON_ARM_TIMEOUT)
 
 # Main states
 IDLE = 'IDLE'
@@ -96,6 +100,16 @@ class StateMachine:
         self.max_retries = 3
         self.basket_calibrated = False
 
+        # Safety monitor (proactive stuck / dark-frame / arm-collision)
+        physics_check_fn = None
+        if hasattr(arm, 'check_arm_collision'):
+            physics_check_fn = arm.check_arm_collision
+        self.safety_monitor = SafetyMonitor(
+            config=config,
+            obstacle_detector=obstacle_detector,
+            physics_check_fn=physics_check_fn,
+        )
+
         self.reset()
 
     def reset(self):
@@ -116,9 +130,16 @@ class StateMachine:
 
         self.recovery_origin = None
         self.recovery_retry_count = 0
+        self.recovery_reason = None
 
         self.collect_sub_state = None
         self.collect_sub_start = None
+
+        # Track arm extension state for safety monitor
+        self.arm_extended = False
+
+        # Track dark-frame recovery re-check
+        self._dark_recheck = False
 
         self.balls_collected = 0
         self.init_retries = {}
@@ -131,11 +152,19 @@ class StateMachine:
             return False
 
         frame = self._read_frame()
+        pose = self._get_pose()
+
+        # Proactive safety monitor (stuck, dark frame, arm collision)
+        motor_values = self.chassis.get_motor_values() if hasattr(self.chassis, 'get_motor_values') else (0.0, 0.0)
+        self.arm_extended = self._is_arm_extended()
+        issue = self.safety_monitor.check(frame, pose, motor_values, self.arm_extended)
+        if issue is not None:
+            self._handle_safety_issue(issue)
+            return True
 
         if self._update_safety(frame):
             return True
 
-        pose = self._get_pose()
         if pose is not None:
             self.world_map.mark_visited(pose)
 
@@ -168,6 +197,15 @@ class StateMachine:
     def _set_motors(self, left, right):
         self.chassis.set_motors(left, right)
 
+    def _is_arm_extended(self):
+        """Check whether the arm is currently in an extended pose."""
+        if hasattr(self.arm, 'is_extended'):
+            try:
+                return self.arm.is_extended()
+            except Exception:
+                return False
+        return False
+
     def _transition_to(self, new_state):
         if new_state == self.state:
             return
@@ -178,6 +216,35 @@ class StateMachine:
         self.state_start_time = time.time()
         self.state_data = {}
         self._log(f'State -> {new_state} (from {old_state})')
+
+    def _handle_safety_issue(self, issue):
+        """Handle a proactive safety issue from SafetyMonitor."""
+        self._log(f'Safety issue: {issue.reason} — {issue.detail}')
+
+        if issue.reason == REASON_ARM_COLLISION:
+            # Retract arm first, then go to recovery
+            try:
+                self.arm.home()
+            except Exception as e:
+                self._log(f'Arm retract failed: {e}')
+            self.arm_extended = False
+            self.recovery_reason = REASON_ARM_COLLISION
+            self._transition_to(RECOVERY)
+            return
+
+        if issue.reason == REASON_STUCK:
+            self.recovery_reason = REASON_STUCK
+            self._transition_to(RECOVERY)
+            return
+
+        if issue.reason == REASON_DARK_FRAME:
+            self.recovery_reason = REASON_DARK_FRAME
+            self._transition_to(RECOVERY)
+            return
+
+        # Fallback: generic recovery
+        self.recovery_reason = issue.reason
+        self._transition_to(RECOVERY)
 
     def _elapsed(self):
         return time.time() - self.state_start_time
@@ -440,6 +507,29 @@ class StateMachine:
 
     def _sub_pickup(self, frame, pose):
         elapsed = time.time() - self.collect_sub_start
+
+        # Layer 1: visual pre-check before extending arm
+        if not self.state_data.get('pickup_visual_ok'):
+            if frame is not None and frame.size > 0:
+                if not self.safety_monitor.arm.visual_pre_check(frame):
+                    self._log('Pickup aborted: obstacle detected before arm extension')
+                    self.recovery_reason = REASON_ARM_COLLISION
+                    return RECOVERY
+            self.state_data['pickup_visual_ok'] = True
+
+        # Layer 3: timeout check (expected total ~3.8s, multiplied)
+        expected_pickup_duration = 3.8
+        if self.safety_monitor.arm.timeout_check(elapsed, expected_pickup_duration):
+            self._log(f'Pickup timeout: elapsed={elapsed:.1f}s > '
+                      f'{expected_pickup_duration * self.safety_monitor.arm.arm_timeout_multiplier:.1f}s')
+            try:
+                self.arm.home()
+            except Exception as e:
+                self._log(f'Arm retract on timeout failed: {e}')
+            self.arm_extended = False
+            self.recovery_reason = REASON_ARM_TIMEOUT
+            return RECOVERY
+
         steps = [
             (0.0, self.arm.gripper_open, 0.3),
             (0.3, lambda: self.arm.move_to_pose(self.arm.pose_pickup), 1.5),
@@ -452,7 +542,9 @@ class StateMachine:
                 if last_step != i:
                     action()
                     self.state_data['last_pickup_step'] = i
+                    self.arm_extended = (i == 1 or i == 3)
                 return CS_PICKUP
+        self.arm_extended = False
         return CS_GOTO_BASKET
 
     def _sub_goto_basket(self, frame, pose):
@@ -492,6 +584,29 @@ class StateMachine:
 
     def _sub_deposit(self, frame, pose):
         elapsed = time.time() - self.collect_sub_start
+
+        # Layer 1: visual pre-check before extending arm over basket
+        if not self.state_data.get('deposit_visual_ok'):
+            if frame is not None and frame.size > 0:
+                if not self.safety_monitor.arm.visual_pre_check(frame):
+                    self._log('Deposit aborted: obstacle detected before arm extension')
+                    self.recovery_reason = REASON_ARM_COLLISION
+                    return RECOVERY
+            self.state_data['deposit_visual_ok'] = True
+
+        # Layer 3: timeout check (expected total ~4.0s, multiplied)
+        expected_deposit_duration = 4.0
+        if self.safety_monitor.arm.timeout_check(elapsed, expected_deposit_duration):
+            self._log(f'Deposit timeout: elapsed={elapsed:.1f}s > '
+                      f'{expected_deposit_duration * self.safety_monitor.arm.arm_timeout_multiplier:.1f}s')
+            try:
+                self.arm.home()
+            except Exception as e:
+                self._log(f'Arm retract on timeout failed: {e}')
+            self.arm_extended = False
+            self.recovery_reason = REASON_ARM_TIMEOUT
+            return RECOVERY
+
         steps = [
             (0.0, lambda: self.arm.move_to_pose(self.arm.pose_deposit), 1.5),
             (1.5, self.arm.gripper_open, 0.5),
@@ -503,7 +618,9 @@ class StateMachine:
                 if last_step != i:
                     action()
                     self.state_data['last_deposit_step'] = i
+                    self.arm_extended = (i == 0)
                 return CS_DEPOSIT
+        self.arm_extended = False
         if self.current_ball and self.current_ball.get('world_id'):
             self.world_map.mark_collected(self.current_ball['world_id'])
         self.current_ball = None
@@ -594,31 +711,86 @@ class StateMachine:
 
         if 'recovery_start' not in self.state_data:
             self.state_data['recovery_start'] = time.time()
-            self._log(f'RECOVERY from {self.recovery_origin} retry {self.recovery_retry_count}')
+            self._log(f'RECOVERY from {self.recovery_origin} '
+                      f'reason={self.recovery_reason} '
+                      f'retry {self.recovery_retry_count}')
+            # Reset safety monitor detectors on recovery entry
+            self.safety_monitor.reset()
 
         elapsed = time.time() - self.state_data['recovery_start']
-        if elapsed < 0.5:
-            self._set_motors(-self.approach_speed, -self.approach_speed)
-        elif elapsed < 1.5:
-            self._set_motors(-self.turn_speed, self.turn_speed)
-        else:
-            self.chassis.stop()
-            self.recovery_retry_count += 1
-            if self.recovery_retry_count > self.max_retries:
-                self._log('Recovery retries exhausted')
-                if self.current_ball and self.current_ball.get('world_id'):
-                    self.world_map.mark_unreachable(self.current_ball['world_id'])
-                self.current_ball = None
-                self.recovery_origin = None
-                self.recovery_retry_count = 0
-                return BALLS_LEFT
+        reason = self.recovery_reason
+
+        # Reason-based recovery sequences
+        if reason == REASON_STUCK:
+            # Longer reverse for stuck situations
+            if elapsed < 0.8:
+                self._set_motors(-self.approach_speed, -self.approach_speed)
+            elif elapsed < 1.5:
+                self._set_motors(-self.turn_speed, self.turn_speed)
             else:
-                origin = self.recovery_origin
-                self.recovery_origin = None
-                self.recovery_retry_count = 0
-                return origin
+                self.chassis.stop()
+                return self._finish_recovery()
+
+        elif reason == REASON_DARK_FRAME:
+            # Reverse to clear view, then re-check frame
+            if elapsed < 0.5:
+                self._set_motors(-self.approach_speed, -self.approach_speed)
+            elif elapsed < 1.0:
+                self.chassis.stop()
+                # Re-check if frame is still dark
+                if frame is not None and frame.size > 0:
+                    gray_mean = frame.mean()
+                    if gray_mean < self.safety_monitor.dark.dark_threshold:
+                        self._log(f'Still dark after reverse (mean={gray_mean:.1f}), retrying')
+                        # Continue reversing
+                        self.state_data['recovery_start'] = time.time()
+                        self._set_motors(-self.approach_speed, -self.approach_speed)
+                        return RECOVERY
+                self._log('Frame cleared after reverse')
+            else:
+                return self._finish_recovery()
+
+        elif reason == REASON_ARM_COLLISION or reason == REASON_ARM_TIMEOUT:
+            # Arm should already be retracted by _handle_safety_issue or sub-state
+            # Brief reverse + turn
+            if elapsed < 0.5:
+                self._set_motors(-self.approach_speed, -self.approach_speed)
+            elif elapsed < 1.5:
+                self._set_motors(-self.turn_speed, self.turn_speed)
+            else:
+                self.chassis.stop()
+                return self._finish_recovery()
+
+        else:
+            # Default recovery (timeout, lost target, etc.)
+            if elapsed < 0.5:
+                self._set_motors(-self.approach_speed, -self.approach_speed)
+            elif elapsed < 1.5:
+                self._set_motors(-self.turn_speed, self.turn_speed)
+            else:
+                self.chassis.stop()
+                return self._finish_recovery()
 
         return RECOVERY
+
+    def _finish_recovery(self):
+        """Common exit logic for recovery state."""
+        self.recovery_retry_count += 1
+        if self.recovery_retry_count > self.max_retries:
+            self._log('Recovery retries exhausted')
+            if self.current_ball and self.current_ball.get('world_id'):
+                self.world_map.mark_unreachable(self.current_ball['world_id'])
+            self.current_ball = None
+            self.recovery_origin = None
+            self.recovery_retry_count = 0
+            self.recovery_reason = None
+            return BALLS_LEFT
+        else:
+            origin = self.recovery_origin
+            self.recovery_origin = None
+            self.recovery_retry_count = 0
+            self.recovery_reason = None
+            return origin
 
     _state_handlers = {
         IDLE: _state_idle,

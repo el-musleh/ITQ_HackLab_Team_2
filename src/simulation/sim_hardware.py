@@ -540,6 +540,33 @@ class ArmController:
         if ball_id is not None:
             self.sim.attach_ball_to_gripper(ball_id)
 
+    def is_extended(self):
+        """Return True if the arm is in an extended (pickup/deposit) pose."""
+        for ext_pose in (self.pose_pickup, self.pose_deposit):
+            if all(abs(a - b) < 1.0 for a, b in
+                   zip(self.current_pose, ext_pose)):
+                return True
+        return False
+
+    def check_arm_collision(self):
+        """Check whether any arm link is in contact with the arena body.
+
+        Returns ``True`` if a collision is detected on an arm link (shoulder,
+        elbow, wrist, or claw), excluding the base and wheels.
+        """
+        if self.sim is None or self.sim.arena_id is None:
+            return False
+        arm_roles = ('shoulder', 'elbow', 'wrist', 'claw')
+        for role in arm_roles:
+            link_idx = self.joint_indices.get(role)
+            if link_idx is None:
+                continue
+            contacts = p.getContactPoints(self.robot_id, self.sim.arena_id,
+                                          linkIndexA=link_idx)
+            if contacts:
+                return True
+        return False
+
     def calibrate_pickup_height(self, test_angles):
         """
         Calibration helper (no-op in simulation).

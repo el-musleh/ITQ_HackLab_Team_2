@@ -176,10 +176,11 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 │   │
 │   ├── control/                 # 🎮 Movement & navigation module
 │   │   ├── __init__.py
-│   │   ├── state_machine.py     # SEARCH → APPROACH → COLLECT → RETURN
-│   │   ├── pid.py               # PID controller for line following
+│   │   ├── state_machine.py     # IDLE → WANDERING → COLLECT → DEPOSIT → END
+│   │   ├── pid.py               # PID controller for approach
 │   │   ├── navigator.py         # Waypoint & path management
-│   │   └── recovery.py          # Stuck-detection & escape behaviors
+│   │   ├── odometry.py          # Pose estimation
+│   │   └── safety_monitor.py    # Proactive stuck / dark-frame / arm-collision detection
 │   │
 │   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
 │   │   ├── __init__.py
@@ -197,9 +198,13 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 │   └── ...
 │
 ├── tests/                       # ✅ Validation scripts
-│   ├── test_camera.py
-│   ├── test_detection.py
-│   └── test_pid.py
+│   ├── test_state_machine.py
+│   ├── test_safety_monitor.py
+│   ├── test_sim_hardware.py
+│   ├── test_simulation_core.py
+│   ├── test_utils.py
+│   ├── mocks.py
+│   └── __init__.py
 │
 └── docs/                        # 📄 Documentation
     └── ...
@@ -241,9 +246,9 @@ Main flow:
 - `BALLS_LEFT` picks the nearest known ball from the map.
 - `BLIND_SPOT` visits candidate viewpoints to find hidden balls.
 - `END` returns to the starting corner and stops.
-- `RECOVERY` handles transient failures with retries.
+- `RECOVERY` handles transient failures with reason-based behavior (stuck, dark frame, arm collision, timeout).
 
-A dedicated safety supervisor overrides all states when a yellow boundary or obstacle is detected.
+A proactive **SafetyMonitor** runs before every state handler, checking for motor stall (StuckDetector), vision blackout (DarkFrameDetector), and arm link collisions (ArmCollisionDetector). Issues trigger an immediate transition to RECOVERY with a tailored response.
 
 See `docs/state-machine.md` for the full diagram and tuning parameters.
 

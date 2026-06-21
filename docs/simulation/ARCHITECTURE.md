@@ -45,6 +45,7 @@ Technical design and implementation details of the PyBullet simulation environme
 - `reset()`: Return to initial state
 - `get_robot_state()`: Get position/orientation
 - `check_collision()`: Detect collisions
+- `check_arm_link_collision()`: Check arm link contacts against arena/obstacle body
 
 **Physics Configuration:**
 - Timestep: 1/240 second (240 Hz)
@@ -93,6 +94,8 @@ class SimArm:
 - Position control with max force
 - Predefined poses from config.yaml
 - Sequences: pickup, deposit
+- `is_extended()`: Returns True when arm is in pickup or deposit pose
+- `check_arm_collision()`: PyBullet contact check on arm links (shoulder, elbow, wrist, claw)
 
 #### SimCamera
 
@@ -217,6 +220,8 @@ def set_joint_angles(angles: List[float]) -> None
 def move_to_pose(pose_name: str) -> None
 def pickup_sequence() -> None
 def deposit_sequence() -> None
+def is_extended() -> bool               # True if arm in pickup/deposit pose
+def check_arm_collision() -> bool        # Sim only: PyBullet contact check
 ```
 
 **Camera:**

@@ -74,6 +74,14 @@ class MockArmController:
     def emergency_stop(self):
         """Emergency stop."""
         return self.home()
+        
+    def is_extended(self):
+        """Return True if arm is in an extended (pickup/deposit) pose."""
+        for ext_pose in (self.pose_pickup, self.pose_deposit):
+            if all(abs(a - b) < 1.0 for a, b in
+                   zip(self.current_pose, ext_pose)):
+                return True
+        return False
 
 
 class MockCameraController:
@@ -101,8 +109,9 @@ class MockCameraController:
         """Read frame."""
         if self.test_frame is not None:
             return self.test_frame
-        # Return blank frame
-        return np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        # Return a realistic mid-gray frame (not all-zeros which triggers
+        # dark-frame detection in the safety monitor)
+        return np.full((self.height, self.width, 3), 128, dtype=np.uint8)
         
     def set_pan(self, angle, speed=150):
         """Set pan angle."""

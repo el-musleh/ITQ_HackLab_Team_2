@@ -17,10 +17,11 @@ itq-bottle-cap-collector/
 │   │
 │   ├── control/                 # 🎮 Movement & navigation module
 │   │   ├── __init__.py
-│   │   ├── state_machine.py     # SEARCH → APPROACH → COLLECT → RETURN
+│   │   ├── state_machine.py     # IDLE → WANDERING → COLLECT → DEPOSIT → END
 │   │   ├── pid.py               # PID controller for approach
 │   │   ├── navigator.py         # Waypoint & path management
-│   │   └── recovery.py          # Stuck-detection & escape behaviors
+│   │   ├── odometry.py          # Pose estimation
+│   │   └── safety_monitor.py    # Proactive stuck / dark-frame / arm-collision detection
 │   │
 │   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
 │   │   ├── __init__.py
@@ -66,7 +67,7 @@ Camera Feed (CSI)
 | Detection backup | YOLO (Ultralytics) | If colors vary or lighting is unpredictable |
 | Approach control | PID controller | Smooth approach, less oscillation than bang-bang |
 | Collection | Arm servo choreography | Grab + lift + stow; exact angles tuned on-site |
-| Recovery | Timeout + reverse tracks | Tracked chassis rotates in place for escape |
+| Recovery | SafetyMonitor + reason-based | Stuck, dark-frame, arm-collision detectors with tailored recovery |
 | Speed strategy | Conservative | Collisions cost more than slow movement |
 
 ## Config File Structure
@@ -90,6 +91,16 @@ state_machine:
   search_rotate_speed: 30
   approach_speed: 40
   recovery_timeout_sec: 5
+
+# Safety monitor (proactive collision / stuck / dark-frame detection)
+safety:
+  stuck_window_s: 2.0
+  stuck_min_displacement: 0.02
+  stuck_motor_threshold: 0.05
+  dark_threshold: 25
+  dark_frame_count: 3
+  arm_timeout_multiplier: 1.5
+  arm_visual_check: true
 
 # PID controller
 pid:

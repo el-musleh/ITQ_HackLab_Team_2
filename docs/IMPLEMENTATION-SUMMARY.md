@@ -210,6 +210,7 @@ ITQ_HackLab_Team_2/
 6. **Modular Design** — Each component independently testable
 7. **Safety Limits** — Speed clamping, servo angle limits
 8. **Recovery System** — Automatic stuck detection and escape
+9. **SafetyMonitor** — Proactive detection of stuck (motor vs displacement), dark frames (vision blackout), and arm collisions (visual pre-check + physics + timeout)
 
 ---
 
@@ -221,6 +222,8 @@ ITQ_HackLab_Team_2/
 - [x] Basket detector with gray objects
 - [x] State machine transitions (logic only)
 - [x] PID controller response
+- [x] SafetyMonitor detectors (StuckDetector, DarkFrameDetector, ArmCollisionDetector)
+- [x] SafetyMonitor priority and aggregation
 
 ### Integration Testing
 - [ ] Camera + perception pipeline
@@ -262,7 +265,7 @@ ITQ_HackLab_Team_2/
 
 ## ⚠️ Known Limitations
 
-1. **No Encoder Feedback** — Stuck detection is timeout-based only
+1. **No Encoder Feedback** — Stuck detection uses motor commands vs pose displacement (SafetyMonitor)
 2. **No Ultrasonic** — Relies purely on vision for obstacle detection
 3. **Fixed Arm Poses** — May need on-site tuning for pickup height
 4. **Lighting Sensitivity** — HSV ranges require calibration

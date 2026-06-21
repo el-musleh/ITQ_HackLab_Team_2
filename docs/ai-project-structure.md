@@ -32,7 +32,7 @@ ITQ_HackLab_Team_2/
 │   ├── brainrot.py              # Vision + driving script
 │   ├── example_hardware_switch.py
 │   ├── servoInt.py
-│   ├── control/                 # State machine, PID, navigator, recovery
+│   ├── control/                 # State machine, PID, navigator, safety monitor, odometry
 │   ├── hardware/                # Chassis, arm, camera
 │   ├── perception/              # Ball, basket, obstacle detectors
 │   ├── simulation/              # Sim core, hardware sim, demos
@@ -55,6 +55,9 @@ ITQ_HackLab_Team_2/
 │
 ├── tests/                       # Test suite
 │   ├── test_state_machine.py
+│   ├── test_safety_monitor.py
+│   ├── test_sim_hardware.py
+│   ├── test_simulation_core.py
 │   ├── test_utils.py
 │   ├── mocks.py
 │   └── __init__.py

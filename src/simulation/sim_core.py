@@ -372,6 +372,28 @@ class SimulationCore:
         contact_points = p.getContactPoints(body_a, body_b)
         return len(contact_points) > 0
 
+    def check_arm_link_collision(self, link_indices, other_body_id=None):
+        """Check whether any arm link is in contact with another body.
+
+        Args:
+            link_indices: List of robot link indices to check (e.g. arm joints).
+            other_body_id: Body ID to check against.  If ``None``, uses the
+                arena body.
+
+        Returns:
+            ``True`` if any arm link has a contact point with the other body.
+        """
+        if other_body_id is None:
+            other_body_id = self.arena_id
+        if other_body_id is None or self.robot_id is None:
+            return False
+        for link_idx in link_indices:
+            contacts = p.getContactPoints(self.robot_id, other_body_id,
+                                          linkIndexA=link_idx)
+            if contacts:
+                return True
+        return False
+
     def get_ball_ids(self):
         """Return list of currently spawned ball body IDs."""
         return list(self.ball_ids)

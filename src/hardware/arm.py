@@ -204,6 +204,14 @@ class ArmController:
             print(f"Elbow movement failed: {e}")
             return False
     
+    def is_extended(self):
+        """Return True if the arm is in an extended (pickup/deposit) pose."""
+        for ext_pose in (self.pose_pickup, self.pose_deposit):
+            if all(abs(a - b) < 1.0 for a, b in
+                   zip(self.current_pose, ext_pose)):
+                return True
+        return False
+
     def emergency_stop(self):
         """Stop all arm movement (return to home)."""
         return self.home()

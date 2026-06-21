@@ -104,6 +104,8 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 - Stop when ball is close (< 15 cm) and centered
 
 #### Sub-State 2: PICKUP
+- **Visual pre-check**: ObstacleDetector scans frame before extending arm → aborts to RECOVERY if obstacle/boundary detected
+- **Timeout check**: If elapsed > 3.8s × 1.5 (5.7s) → retract arm, enter RECOVERY
 - Open claw
 - Lower arm to pickup pose
 - Close claw to grip ball
@@ -115,6 +117,8 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 - Stop when basket is close and centered
 
 #### Sub-State 4: DEPOSIT
+- **Visual pre-check**: ObstacleDetector scans frame before extending arm → aborts to RECOVERY if obstacle/boundary detected
+- **Timeout check**: If elapsed > 4.0s × 1.5 (6.0s) → retract arm, enter RECOVERY
 - Raise arm to deposit pose
 - Open claw to drop ball
 - Return arm to home pose
@@ -131,25 +135,30 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 
 ### 5. RECOVERY - Failure Handling
 
-**Purpose**: Execute standard recovery maneuver and retry
+**Purpose**: Execute reason-based recovery maneuver and retry
 
 **Entry Conditions**:
-- From COLLECT_BALL on failure
-- From WANDERING on stuck condition
+- From COLLECT_BALL on failure (timeout, lost target)
+- From any state via SafetyMonitor (stuck, dark frame, arm collision)
 - From BLIND_SPOT on navigation failure
 
-**Behavior**:
-- Record originating state
-- Stop all motors
-- Reverse for 0.5 seconds
-- Rotate 90° in safer direction
+**Behavior** (varies by `recovery_reason`):
+
+| Reason | Sequence | Detail |
+|--------|----------|--------|
+| `stuck` | Reverse 0.8s → Turn 1.0s | Longer reverse to break free from obstruction |
+| `dark_frame` | Reverse 0.5s → Stop & re-check | Reverses to clear view; re-checks frame brightness; retries if still dark |
+| `arm_collision` | Reverse 0.5s → Turn 1.0s | Arm retracted before entering recovery |
+| `arm_timeout` | Reverse 0.5s → Turn 1.0s | Arm retracted before entering recovery |
+| (default) | Reverse 0.5s → Turn 1.0s | Generic recovery for timeout / lost target |
+
+**Common exit logic** (`_finish_recovery`):
 - Increment retry counter
-
-**Exit Conditions**:
 - Retry count < max (3) → Return to originating state
-- Retry count >= max → BALLS_LEFT
+- Retry count >= max → BALLS_LEFT (ball marked unreachable if applicable)
+- Reset `recovery_reason` on exit
 
-**Timeout**: 3 seconds
+**Timeout**: ~2 seconds per attempt
 
 ---
 
@@ -267,7 +276,19 @@ APPROACH → PICKUP → GOTO_BASKET → DEPOSIT → (success)
 
 Safety checks run **every tick** and override the current state if triggered.
 
-### Priority
+### SafetyMonitor (Proactive)
+
+Runs **before** the state handler on every tick. Aggregates three detectors:
+
+| Detector | Trigger | Action |
+|----------|---------|--------|
+| **ArmCollisionDetector** (physics) | Arm link contact detected (sim only) | Retract arm → RECOVERY |
+| **StuckDetector** | Motors running but no displacement for 2s | RECOVERY (longer reverse) |
+| **DarkFrameDetector** | Mean frame brightness < 25 for 3 consecutive frames | RECOVERY (reverse + re-check) |
+
+Priority: arm collision > stuck > dark frame
+
+### Reactive Safety (ObstacleDetector)
 
 1. **Boundary Detection** (highest priority)
 2. **Obstacle Detection**
@@ -392,6 +413,19 @@ kd = 0.5   # Derivative gain
 
 ```python
 max_retries = 3   # Maximum retry attempts before giving up
+```
+
+### Safety Monitor
+
+```python
+safety:
+  stuck_window_s: 2.0          # Rolling window for stuck detection
+  stuck_min_displacement: 0.02 # Min displacement (m) to not be considered stuck
+  stuck_motor_threshold: 0.05  # Min motor sum to consider "motors running"
+  dark_threshold: 25           # Mean brightness below which frame is "dark"
+  dark_frame_count: 3          # Consecutive dark frames to trigger
+  arm_timeout_multiplier: 1.5  # Sub-state duration multiplier for timeout
+  arm_visual_check: true       # Enable visual pre-check before arm extension
 ```
 
 ---

@@ -86,6 +86,16 @@ serial:
   port: /dev/ttyTHS1
   baudrate: 1000000
 
+# Safety monitor (proactive collision / stuck / dark-frame detection)
+safety:
+  stuck_window_s: 2.0          # Rolling window for stuck detection
+  stuck_min_displacement: 0.02 # Min displacement (m) to not be considered stuck
+  stuck_motor_threshold: 0.05  # Min motor sum to consider "motors running"
+  dark_threshold: 25           # Mean brightness below which frame is "dark"
+  dark_frame_count: 3          # Consecutive dark frames to trigger
+  arm_timeout_multiplier: 1.5  # Sub-state duration multiplier for timeout
+  arm_visual_check: true       # Enable visual pre-check before arm extension
+
 # Simulation (PyBullet) settings. Only used by src/simulation/.
 simulation:
   gui: true                # Show PyBullet GUI window (false for headless/CI)
