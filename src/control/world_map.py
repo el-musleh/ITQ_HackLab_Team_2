@@ -13,7 +13,7 @@ class WorldMap:
 
     def __init__(self, arena_bounds, obstacle_positions=None, grid_resolution=0.2,
                  view_radius=0.8, merge_distance=0.1, min_margin=0.15,
-                 camera_fov_deg=160):
+                 camera_fov_deg=160, basket_position=None):
         """
         Initialize world map.
 
@@ -25,6 +25,7 @@ class WorldMap:
             merge_distance: Merge two ball detections if closer than this (m).
             min_margin: Keep candidate points at least this far from obstacle edges.
             camera_fov_deg: Horizontal camera field of view for bearing calculation.
+            basket_position: Optional (x, y) tuple for basket location in world coords.
         """
         self.arena_bounds = arena_bounds
         self.obstacle_positions = obstacle_positions or []
@@ -33,26 +34,69 @@ class WorldMap:
         self.merge_distance = merge_distance
         self.min_margin = min_margin
         self.camera_fov_deg = camera_fov_deg
+        self.basket_position = basket_position
 
         self.balls = []
         self._ball_id_counter = 0
         self._visited = set()
         self._generate_candidate_cells()
 
+    def set_basket_position(self, x, y):
+        """Store estimated basket world coordinates."""
+        self.basket_position = (x, y)
+
+    def get_basket_position(self):
+        """Return (x, y) basket position or None if unknown."""
+        return self.basket_position
+
     def _generate_candidate_cells(self):
-        """Build list of candidate viewpoint cells inside the arena and outside obstacles."""
+        """Build list of candidate viewpoint cells inside the arena and outside obstacles.
+
+        Uses adaptive refinement: cells near obstacle edges (within
+        ``min_margin * 2``) are subdivided at half resolution to catch
+        narrow gaps between obstacles without increasing cell count
+        across the whole arena.
+        """
         self._candidate_cells = []
+        coarse = self.grid_resolution
+        fine = coarse / 2.0
+        refine_band = self.min_margin * 2
+
         x_min, x_max = self.arena_bounds['x_min'], self.arena_bounds['x_max']
         y_min, y_max = self.arena_bounds['y_min'], self.arena_bounds['y_max']
 
-        x = x_min + self.grid_resolution / 2
+        x = x_min + coarse / 2
         while x < x_max:
-            y = y_min + self.grid_resolution / 2
+            y = y_min + coarse / 2
             while y < y_max:
                 if self._is_inside_arena((x, y)) and not self._is_near_obstacle((x, y)):
                     self._candidate_cells.append((x, y))
-                y += self.grid_resolution
-            x += self.grid_resolution
+                    # Adaptive refinement: add sub-cells near obstacle edges
+                    if self._is_near_obstacle_edge((x, y), refine_band):
+                        for dx in (-fine / 2, fine / 2):
+                            for dy in (-fine / 2, fine / 2):
+                                sub = (x + dx, y + dy)
+                                if (self._is_inside_arena(sub) and
+                                        not self._is_near_obstacle(sub) and
+                                        sub not in self._candidate_cells):
+                                    self._candidate_cells.append(sub)
+                y += coarse
+            x += coarse
+
+    def _is_near_obstacle_edge(self, point, band):
+        """Return True if point is within ``band`` of an obstacle but not inside it."""
+        x, y = point
+        for obs in self.obstacle_positions:
+            ox, oy = obs['x'], obs['y']
+            half_w = obs.get('width', 0) / 2
+            half_h = obs.get('height', 0) / 2
+            dx = abs(x - ox) - half_w
+            dy = abs(y - oy) - half_h
+            # Distance to obstacle edge (0 if inside, positive if outside)
+            edge_dist = max(dx, dy)
+            if 0 < edge_dist <= band:
+                return True
+        return False
 
     def _is_inside_arena(self, point):
         x, y = point
@@ -70,7 +114,7 @@ class WorldMap:
                 return True
         return False
 
-    def register_ball(self, x, y, source='camera', confidence=1.0):
+    def register_ball(self, x, y, source='camera', confidence=1.0, color=None):
         """Register a ball at world coordinates; merge duplicates."""
         if not self._is_inside_arena((x, y)):
             return None
@@ -87,6 +131,8 @@ class WorldMap:
                 ball['y'] = (ball['y'] * ball['confidence'] + y * confidence) / (ball['confidence'] + confidence)
                 ball['confidence'] += confidence
                 ball['source'] = source
+                if color is not None:
+                    ball['color'] = color
                 return ball['id']
 
         self._ball_id_counter += 1
@@ -97,6 +143,7 @@ class WorldMap:
             'source': source,
             'confidence': confidence,
             'collected': False,
+            'color': color,
         }
         self.balls.append(ball)
         return ball['id']
@@ -124,7 +171,7 @@ class WorldMap:
         camera_yaw = ryaw + math.radians(camera_pan_deg)
         x = rx + distance_m * math.cos(camera_yaw + bearing)
         y = ry + distance_m * math.sin(camera_yaw + bearing)
-        return self.register_ball(x, y, source=source)
+        return self.register_ball(x, y, source=source, color=color)
 
     def mark_collected(self, ball_id):
         """Mark a ball as collected."""

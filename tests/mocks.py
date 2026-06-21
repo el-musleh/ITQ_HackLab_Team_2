@@ -222,8 +222,9 @@ class MockWorldMap:
         self.balls = []
         self.visited = set()
         self.blind_spots = []
+        self.basket_position = None
         
-    def register_ball(self, x, y, source='camera', confidence=1.0):
+    def register_ball(self, x, y, source='camera', confidence=1.0, color=None):
         """Register a ball."""
         ball_id = len(self.balls)
         ball = {
@@ -233,6 +234,7 @@ class MockWorldMap:
             'source': source,
             'confidence': confidence,
             'collected': False,
+            'color': color,
         }
         self.balls.append(ball)
         return ball_id
@@ -293,7 +295,7 @@ class MockWorldMap:
         color, (cx, cy), distance, area = ball
         x = pose[0] + (distance / 100.0) * (1 if cx >= 0 else 0)
         y = pose[1]
-        return self.register_ball(x, y, source='camera')
+        return self.register_ball(x, y, source='camera', color=color)
 
     def get_nearest_blind_spot(self, pose):
         """Get nearest unvisited blind spot."""
@@ -316,6 +318,14 @@ class MockWorldMap:
                 ball['unreachable'] = True
                 return True
         return False
+
+    def set_basket_position(self, x, y):
+        """Store basket world coordinates."""
+        self.basket_position = (x, y)
+
+    def get_basket_position(self):
+        """Return (x, y) or None."""
+        return self.basket_position
 
     def get_ball_count(self):
         """Return (total, collected, remaining, unreachable) counts."""

@@ -282,6 +282,156 @@ class TestRecovery:
         assert sm.recovery_origin == COLLECT_BALL
 
 
+class TestGotoBasketHybrid:
+    """Test hybrid A* + visual GOTO_BASKET navigation."""
+
+    def test_goto_basket_uses_pathfinder_when_basket_known(self):
+        """A* path is computed on entry when basket position is known."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_GOTO_BASKET
+        sm.state_start_time = time.time()
+        sm.collect_sub_start = time.time()
+
+        # Set basket position in world map
+        mocks['world_map'].set_basket_position(0.9, 0.875)
+        # Robot at corner, far from basket
+        mocks['pose'][0] = 0.05
+        mocks['pose'][1] = 0.05
+        mocks['pose'][2] = 0.0
+
+        # Provide a valid frame
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        # Basket not visible (far away)
+        mocks['basket_detector'].test_basket = {'basket_found': False}
+
+        result = sm._sub_goto_basket(frame, tuple(mocks['pose']))
+
+        # Should have computed an A* path
+        assert 'basket_path' in sm.state_data
+        assert sm.state_data['basket_path'] is not None
+        assert len(sm.state_data['basket_path']) >= 2
+
+    def test_goto_basket_visual_homing_near_basket(self):
+        """Switches to visual homing when within threshold of basket."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_GOTO_BASKET
+        sm.state_start_time = time.time()
+        sm.collect_sub_start = time.time()
+
+        # Basket position known, robot very close
+        mocks['world_map'].set_basket_position(0.9, 0.875)
+        mocks['pose'][0] = 0.85
+        mocks['pose'][1] = 0.82
+        mocks['pose'][2] = 0.0
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        # Basket detected visually
+        mocks['basket_detector'].test_basket = {
+            'basket_found': True,
+            'centroid': (160, 120),
+            'distance': 15.0,
+            'area': 500,
+            'width': 60,
+            'bearing': 0.0,
+        }
+
+        result = sm._sub_goto_basket(frame, tuple(mocks['pose']))
+        # Should transition to DEPOSIT (distance < 20 and centered)
+        assert result == CS_DEPOSIT
+
+    def test_goto_basket_replans_on_obstacle(self):
+        """A* path is cleared and replanned when obstacle is detected."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_GOTO_BASKET
+        sm.state_start_time = time.time()
+        sm.collect_sub_start = time.time()
+
+        mocks['world_map'].set_basket_position(0.9, 0.875)
+        mocks['pose'][0] = 0.05
+        mocks['pose'][1] = 0.05
+        mocks['pose'][2] = 0.0
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        mocks['basket_detector'].test_basket = {'basket_found': False}
+
+        # First call — computes path
+        sm._sub_goto_basket(frame, tuple(mocks['pose']))
+        assert 'basket_path' in sm.state_data
+        assert len(sm.state_data['basket_path']) >= 2
+
+        # Simulate obstacle detection during safety check
+        mocks['obstacle_detector'].test_obstacle = True
+        sm._update_safety(frame)
+
+        # Path should be cleared for replanning
+        assert 'basket_path' not in sm.state_data or not sm.state_data.get('basket_path')
+
+    def test_goto_basket_falls_back_to_visual_without_basket_pos(self):
+        """Falls back to visual homing when basket position is unknown."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_GOTO_BASKET
+        sm.state_start_time = time.time()
+        sm.collect_sub_start = time.time()
+
+        # No basket position set
+        assert mocks['world_map'].get_basket_position() is None
+
+        import numpy as np
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        mocks['basket_detector'].test_basket = {'basket_found': False}
+
+        result = sm._sub_goto_basket(frame, (0.1, 0.1, 0.0))
+        # Should not crash, should stay in GOTO_BASKET or go to RECOVERY
+        assert result in (CS_GOTO_BASKET, RECOVERY)
+
+    def test_goto_basket_keeps_ball_on_failure(self):
+        """Ball stays in current_ball when GOTO_BASKET retries are exhausted."""
+        sm, mocks = create_test_state_machine()
+        sm.state = COLLECT_BALL
+        sm.collect_sub_state = CS_GOTO_BASKET
+        sm.state_start_time = time.time()
+        sm.collect_sub_start = time.time()
+        sm.current_ball = {'world_id': 0, 'color': 'red'}
+        sm.recovery_origin = COLLECT_BALL
+        sm.recovery_retry_count = sm.max_retries  # At limit
+
+        # Finish recovery should replan GOTO_BASKET and keep the ball
+        result = sm._finish_recovery()
+        assert result == CS_GOTO_BASKET
+        # Ball is NOT cleared — it stays in the gripper
+        assert sm.current_ball is not None
+
+    def test_estimate_basket_world_pos(self):
+        """Test basket world position estimation from detection + pose."""
+        sm, mocks = create_test_state_machine()
+
+        # Robot at (0.5, 0.5) facing right (yaw=0)
+        pose = (0.5, 0.5, 0.0)
+        # Basket detected at center of frame, 50cm away
+        detection = {
+            'basket_found': True,
+            'centroid': (160, 120),  # Center of 320px frame
+            'distance': 50.0,  # cm
+            'area': 500,
+            'width': 60,
+            'bearing': 0.0,
+        }
+
+        bx, by = sm._estimate_basket_world_pos(detection, pose)
+        # Bearing 0, distance 0.5m, yaw 0 → basket at (1.0, 0.5)
+        assert bx is not None
+        assert by is not None
+        assert abs(bx - 1.0) < 0.05
+        assert abs(by - 0.5) < 0.05
+
+
 # Run tests if executed directly
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

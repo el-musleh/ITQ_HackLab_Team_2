@@ -177,9 +177,10 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 │   ├── control/                 # 🎮 Movement & navigation module
 │   │   ├── __init__.py
 │   │   ├── state_machine.py     # IDLE → WANDERING → COLLECT → DEPOSIT → END
+│   │   ├── world_map.py         # Ball registry, blind-spot grid, coverage tracking
 │   │   ├── pid.py               # PID controller for approach
 │   │   ├── navigator.py         # Waypoint & path management
-│   │   ├── odometry.py          # Pose estimation
+│   │   ├── odometry.py          # Pose estimation + landmark correction
 │   │   └── safety_monitor.py    # Proactive stuck / dark-frame / arm-collision detection
 │   │
 │   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
@@ -240,11 +241,11 @@ Main flow:
 `IDLE → WANDERING → CHECK_FOR_BALL → COLLECT_BALL → CHECK_FOR_BALL → BALLS_LEFT → BLIND_SPOT → END`
 
 - `IDLE` initializes sensors and aborts on hard failures.
-- `WANDERING` sweeps the camera, registers balls into the world map, and calibrates the basket.
-- `CHECK_FOR_BALL` decides whether to collect a ball, check the map, or explore blind spots.
-- `COLLECT_BALL` tracks the ball, picks it up, returns to the basket, and deposits it.
-- `BALLS_LEFT` picks the nearest known ball from the map.
-- `BLIND_SPOT` visits candidate viewpoints to find hidden balls.
+- `WANDERING` sweeps the camera, registers balls into the world map (with color and world coordinates), and calibrates the basket.
+- `CHECK_FOR_BALL` decides whether to collect a ball, check the map, or explore blind spots. Registers detected balls in the world map and links `world_id` for collection tracking.
+- `COLLECT_BALL` tracks the ball, picks it up, returns to the basket, and deposits it. Marks the ball as collected in the world map via `world_id`.
+- `BALLS_LEFT` picks the nearest known ball from the map (with color for visual re-identification).
+- `BLIND_SPOT` visits candidate viewpoints (adaptive grid with finer cells near obstacles) to find hidden balls.
 - `END` returns to the starting corner and stops.
 - `RECOVERY` handles transient failures with reason-based behavior (stuck, dark frame, arm collision, timeout).
 

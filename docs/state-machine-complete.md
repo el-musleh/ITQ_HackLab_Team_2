@@ -1,6 +1,6 @@
 # State Machine Complete Documentation
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Date**: June 21, 2026
 
 ---
@@ -78,6 +78,8 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 - Center camera
 - Check for balls in current view
 - Select target ball if available
+- Register detected ball in WorldMap (with color and world coordinates)
+- Link `world_id` to `current_ball` for collection tracking
 
 **Exit Conditions**:
 - Ball in view → COLLECT_BALL
@@ -111,10 +113,13 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 - Close claw to grip ball
 - Lift to carry pose
 
-#### Sub-State 3: GOTO_BASKET
-- Rotate/search for basket
-- Drive toward basket using BasketDetector
-- Stop when basket is close and centered
+#### Sub-State 3: GOTO_BASKET (Hybrid A* + Visual)
+- **Phase A — A* Pathfinding**: When basket world position is known (from simulation or estimated during WANDERING), compute optimal path around obstacles using `AStarPathfinder` (5cm grid, 18cm safety margin). Follow waypoints using turn-and-drive navigation.
+- **Phase B — Visual Homing**: When within 50cm of basket, switch to `BasketDetector` for precise alignment using PID control.
+- **Phase C — Deposit**: When basket is centered and close (<20cm), transition to DEPOSIT.
+- **Replanning**: If obstacle detected during path following, mark blocked area in pathfinder grid, clear cached path, and recompute A* from current position.
+- **Backtracking**: On recovery exhaustion with ball in gripper, keep ball and replan path (up to 5 retries). Only gives up if no path exists.
+- **Fallback**: If basket position unknown, falls back to purely visual homing (rotate to search).
 
 #### Sub-State 4: DEPOSIT
 - **Visual pre-check**: ObstacleDetector scans frame before extending arm → aborts to RECOVERY if obstacle/boundary detected
@@ -122,7 +127,7 @@ The robot uses a finite state machine (FSM) to autonomously collect balls and de
 - Raise arm to deposit pose
 - Open claw to drop ball
 - Return arm to home pose
-- Mark ball as collected in WorldMap
+- Mark ball as collected in WorldMap (via `world_id` linked during CHECK_FOR_BALL or APPROACH)
 
 **Exit Conditions**:
 - All sub-states complete → CHECK_FOR_BALL
@@ -267,7 +272,7 @@ APPROACH → PICKUP → GOTO_BASKET → DEPOSIT → (success)
 |--------------|--------------------------|-----------------------------|--------------------|
 | APPROACH     | Drive to ball            | Ball centered & close       | Timeout, ball lost |
 | PICKUP       | Grab ball with claw      | Claw closed, arm lifted     | Arm movement fails |
-| GOTO_BASKET  | Navigate to basket       | Basket centered & close     | Timeout, not found |
+| GOTO_BASKET  | Navigate to basket (A* + visual) | Basket centered & close | Timeout, no path, obstacle |
 | DEPOSIT      | Drop ball in basket      | Claw opened, arm home       | Arm movement fails |
 
 ---
@@ -351,7 +356,8 @@ stateDiagram-v2
     PICKUP --> GOTO_BASKET : pickup complete
     PICKUP --> RECOVERY : pickup failed
     GOTO_BASKET --> DEPOSIT : basket reached
-    GOTO_BASKET --> RECOVERY : timeout
+    GOTO_BASKET --> RECOVERY : timeout/obstacle
+    GOTO_BASKET --> GOTO_BASKET : replan (recovery exhausted, ball kept)
     DEPOSIT --> [*] : deposit complete
     DEPOSIT --> RECOVERY : deposit failed
     RECOVERY --> [*] : (exit to main FSM)
@@ -434,17 +440,28 @@ safety:
 
 ### Ball Tracking
 
-- **Registration**: Balls detected during WANDERING are registered with world coordinates
-- **Merging**: Duplicate detections within 10 cm are merged
+- **Registration**: Balls detected during WANDERING and CHECK_FOR_BALL are registered with world coordinates and color
+- **Merging**: Duplicate detections within 10 cm are merged (confidence-weighted position averaging)
+- **Color storage**: Ball color is stored in the registry, enabling visual re-identification during approach
+- **world_id linkage**: `world_id` is linked to `current_ball` during CHECK_FOR_BALL and updated during APPROACH, so `mark_collected()` works for both direct and map-sourced collections
 - **Collection**: Collected balls are marked to prevent re-attempts
-- **Selection**: Nearest uncollected ball is always chosen
+- **Unreachable**: Balls that exhaust recovery retries are marked unreachable and excluded from future selection
+- **Selection**: Nearest uncollected, reachable ball is always chosen
 
 ### Blind Spot Generation
 
-- **Grid**: Arena divided into 20 cm cells
+- **Grid**: Arena divided into configurable cells (default 10 cm, via `world_map.grid_resolution` in `config.yaml`)
+- **Adaptive refinement**: Cells near obstacle edges are subdivided at half resolution to catch narrow gaps
 - **Candidates**: Cells inside arena and away from obstacles
 - **Visited**: Cells marked as visited during navigation
 - **Priority**: Unvisited cells become blind spot viewpoints
+
+### Odometry & Drift Mitigation
+
+- **Dead reckoning**: `DifferentialDriveOdometry` integrates commanded motor values to estimate (x, y, yaw)
+- **Landmark correction**: `correct_pose()` method adjusts pose using a known landmark (e.g., basket) with weighted blending (`correction_alpha`, default 0.3)
+- **Simulated drift**: `drift_noise_std` parameter injects Gaussian noise for testing robustness (default 0, disabled)
+- **Configuration**: `odometry` section in `config.yaml`
 
 ---
 
@@ -469,7 +486,7 @@ CHECK_FOR_BALL (0.5s)
 COLLECT_BALL (25s)
   → APPROACH (8s): Drive to ball, center in view
   → PICKUP (5s): Lower arm, close claw, lift
-  → GOTO_BASKET (10s): Rotate, find basket, approach
+  → GOTO_BASKET (10s): A* pathfinding around obstacles, visual homing near basket
   → DEPOSIT (2s): Raise arm, open claw, return home
   
 CHECK_FOR_BALL (0.5s)

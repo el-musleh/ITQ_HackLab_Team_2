@@ -530,21 +530,31 @@ class SimulationCore:
         """Detach the currently attached ball (if any).
 
         If the release happens inside the basket drop zone, the ball is marked
-        as deposited for simulation assertions and telemetry.
+        as deposited for simulation assertions and telemetry, and removed from
+        the physics world and ``ball_ids`` so it is no longer detected.
         """
         ball_id = self.attached_ball_id
         if self._grasp_constraint_id is not None:
+            deposited = False
             if ball_id is not None:
                 ball_pos = p.getBasePositionAndOrientation(ball_id)[0]
                 if np.hypot(ball_pos[0] - self.basket_position[0],
                             ball_pos[1] - self.basket_position[1]) <= self.basket_deposit_radius:
                     self.deposited_ball_ids.add(ball_id)
+                    deposited = True
             try:
                 p.removeConstraint(self._grasp_constraint_id)
             except Exception as e:  # pragma: no cover - defensive
                 logger.debug("Constraint removal error: %s", e)
             self._grasp_constraint_id = None
             self.attached_ball_id = None
+            if deposited and ball_id is not None:
+                if ball_id in self.ball_ids:
+                    self.ball_ids.remove(ball_id)
+                try:
+                    p.removeBody(ball_id)
+                except Exception as e:  # pragma: no cover - defensive
+                    logger.debug("Ball removal error: %s", e)
 
     def get_deposited_count(self):
         """Return the number of balls released in the basket drop zone."""

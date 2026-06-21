@@ -53,6 +53,22 @@ state_machine:
   approach_speed: 40
   recovery_timeout_sec: 5
 
+# World map (ball memory & blind-spot coverage)
+world_map:
+  grid_resolution: 0.1    # Cell size for coverage grid (m), smaller=finer
+  view_radius: 0.8        # Camera sweep coverage radius (m)
+  merge_distance: 0.1     # Duplicate ball merge threshold (m)
+
+# Pathfinder (A* grid-based navigation around obstacles)
+pathfinder:
+  cell_size: 0.05       # Grid cell size (m), smaller=finer but slower
+  safety_margin: 0.18   # Robot radius + buffer from obstacle edges (m)
+
+# Odometry (dead-reckoning pose estimation for real hardware)
+odometry:
+  correction_alpha: 0.3    # Weight for landmark correction (0=ignore, 1=full trust)
+  drift_noise_std: 0.0     # Simulated drift noise (m per step), 0=disabled
+
 # PID controller
 pid:
   kp: 3.0   # Proportional gain

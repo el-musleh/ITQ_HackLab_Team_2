@@ -18,9 +18,10 @@ itq-bottle-cap-collector/
 │   ├── control/                 # 🎮 Movement & navigation module
 │   │   ├── __init__.py
 │   │   ├── state_machine.py     # IDLE → WANDERING → COLLECT → DEPOSIT → END
+│   │   ├── world_map.py         # Ball registry, blind-spot grid, coverage tracking
 │   │   ├── pid.py               # PID controller for approach
 │   │   ├── navigator.py         # Waypoint & path management
-│   │   ├── odometry.py          # Pose estimation
+│   │   ├── odometry.py          # Pose estimation + landmark correction
 │   │   └── safety_monitor.py    # Proactive stuck / dark-frame / arm-collision detection
 │   │
 │   ├── hardware/                # 🔧 Robot interface (JETANK / Jetson Nano)
@@ -36,9 +37,11 @@ itq-bottle-cap-collector/
 │       └── visualizer.py        # Debug overlay for camera feed
 │
 └── tests/                       # ✅ Validation scripts
-    ├── test_camera.py
-    ├── test_detection.py
-    └── test_pid.py
+    ├── test_state_machine.py
+    ├── test_world_map.py
+    ├── test_odometry.py
+    ├── test_sim_core.py
+    └── test_sim_hardware.py
 ```
 
 ## Data Flow
@@ -69,6 +72,9 @@ Camera Feed (CSI)
 | Collection | Arm servo choreography | Grab + lift + stow; exact angles tuned on-site |
 | Recovery | SafetyMonitor + reason-based | Stuck, dark-frame, arm-collision detectors with tailored recovery |
 | Speed strategy | Conservative | Collisions cost more than slow movement |
+| Ball memory | WorldMap with color + confidence | Tracks ball positions, merges duplicates, marks collected/unreachable |
+| Blind-spot grid | Adaptive refinement (10 cm + half-res near obstacles) | Catches narrow gaps without excessive cell count |
+| Odometry drift | Landmark correction (weighted alpha blend) | Reduces dead-reckoning error using basket as known landmark |
 
 ## Config File Structure
 

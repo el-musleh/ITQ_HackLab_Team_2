@@ -87,7 +87,15 @@ class SimulationRunner:
             {'x': 0.9 - 0.40, 'y': 0.875 + 0.40, 'width': 0.30, 'height': 0.20},
             {'x': 0.9 + 0.40, 'y': 0.875 - 0.40, 'width': 0.40, 'height': 0.30},
         ]
-        self.world_map = WorldMap(arena_bounds, obstacle_positions=obstacle_positions)
+        wm_cfg = config.get('world_map', {})
+        self.world_map = WorldMap(
+            arena_bounds,
+            obstacle_positions=obstacle_positions,
+            grid_resolution=wm_cfg.get('grid_resolution', 0.1),
+            view_radius=wm_cfg.get('view_radius', 0.8),
+            merge_distance=wm_cfg.get('merge_distance', 0.1),
+            basket_position=self.sim.basket_position,
+        )
 
         def get_pose():
             state = self.sim.get_robot_state()

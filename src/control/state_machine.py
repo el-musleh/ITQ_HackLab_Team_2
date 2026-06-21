@@ -10,6 +10,7 @@ Seven main states plus a dedicated RECOVERY state:
 import math
 import time
 
+from src.control.pathfinder import AStarPathfinder
 from src.control.pid import DualPIDController
 from src.control.safety_monitor import SafetyMonitor, SafetyIssue
 from src.control.safety_monitor import (REASON_STUCK, REASON_DARK_FRAME,
@@ -97,8 +98,18 @@ class StateMachine:
         self.timeouts = DEFAULT_TIMEOUTS.copy()
         self.timeouts.update(self.state_machine_config.get('timeouts', {}))
 
-        self.max_retries = 3
+        self.max_retries = 5
         self.basket_calibrated = False
+
+        # Pathfinder for map-based navigation to basket
+        pf_cfg = self.config.get('pathfinder', {})
+        self.pathfinder = AStarPathfinder(
+            arena_bounds=world_map.arena_bounds,
+            obstacle_positions=world_map.obstacle_positions,
+            cell_size=pf_cfg.get('cell_size', 0.05),
+            safety_margin=pf_cfg.get('safety_margin', 0.18),
+        )
+        self.visual_homing_threshold = 0.5  # Switch to visual within 50cm of basket
 
         # Safety monitor (proactive stuck / dark-frame / arm-collision)
         physics_check_fn = None
@@ -274,6 +285,13 @@ class StateMachine:
                 self.safety_timer = now + 0.5
                 self.safety_pause_start = now
                 self._log(f'Safety: {obs["priority"]} -> {self.safety_action}')
+                # If navigating to basket via A*, mark blocked area and replan
+                if self.state == COLLECT_BALL and self.collect_sub_state == CS_GOTO_BASKET:
+                    pose = self._get_pose()
+                    if pose is not None:
+                        self.pathfinder.mark_blocked(pose[0], pose[1], radius=0.15)
+                        self.state_data.pop('basket_path', None)
+                        self._log('GOTO_BASKET: obstacle hit — replanning A* path')
             self._execute_safety_action(self.safety_action)
             return True
 
@@ -356,6 +374,12 @@ class StateMachine:
                         self._log('Basket calibrated')
                     except Exception as e:
                         self._log(f'Basket calibration failed: {e}')
+                    # Estimate basket world position from first detection + pose
+                    if pose is not None and basket.get('distance'):
+                        bx, by = self._estimate_basket_world_pos(basket, pose)
+                        if bx is not None:
+                            self.world_map.set_basket_position(bx, by)
+                            self._log(f'Basket world pos estimated: ({bx:.2f}, {by:.2f})')
 
         # Register balls seen in current frame
         if frame is not None and pose is not None:
@@ -419,7 +443,13 @@ class StateMachine:
         balls = self.ball_detector.detect(frame)
         if balls:
             balls_sorted = sorted(balls, key=lambda b: b[2])
-            self.current_ball = self._ball_to_dict(balls_sorted[0])
+            ball = balls_sorted[0]
+            world_id = None
+            if pose is not None:
+                pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
+                world_id = self.world_map.register_ball_from_detection(
+                    ball, pose, camera_pan_deg=pan)
+            self.current_ball = self._ball_to_dict(ball, world_id=world_id)
             return COLLECT_BALL
         if self.world_map.has_known_balls():
             return BALLS_LEFT
@@ -427,10 +457,10 @@ class StateMachine:
             return BLIND_SPOT
         return END
 
-    def _ball_to_dict(self, ball):
+    def _ball_to_dict(self, ball, world_id=None):
         color, (cx, cy), distance, area = ball
         return {'color': color, 'cx': cx, 'cy': cy,
-                'distance': distance, 'area': area, 'world_id': None}
+                'distance': distance, 'area': area, 'world_id': world_id}
 
     def _state_collect_ball(self, frame, pose):
         if self.collect_sub_state is None:
@@ -477,7 +507,14 @@ class StateMachine:
         ball = self._find_matching_ball(balls)
         if ball is None:
             ball = balls[0]
-        self.current_ball = self._ball_to_dict(ball)
+        world_id = self.current_ball.get('world_id') if self.current_ball else None
+        if pose is not None:
+            pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
+            new_id = self.world_map.register_ball_from_detection(
+                ball, pose, camera_pan_deg=pan)
+            if new_id is not None:
+                world_id = new_id
+        self.current_ball = self._ball_to_dict(ball, world_id=world_id)
 
         color, (cx, cy), distance, area = ball
         center_x = self.frame_width / 2
@@ -547,7 +584,101 @@ class StateMachine:
         self.arm_extended = False
         return CS_GOTO_BASKET
 
+    def _estimate_basket_world_pos(self, basket_detection, pose):
+        """Estimate basket world coordinates from detection + robot pose.
+
+        Args:
+            basket_detection: Dict from BasketDetector.detect()
+            pose: (x, y, yaw) robot pose
+
+        Returns:
+            (x, y) world coordinates or (None, None) if estimation fails.
+        """
+        if pose is None:
+            return None, None
+        rx, ry, ryaw = pose
+        centroid = basket_detection.get('centroid')
+        distance_cm = basket_detection.get('distance')
+        if centroid is None or distance_cm is None:
+            return None, None
+        cx, _ = centroid
+        # Bearing from frame center (approximate FOV 90 degrees)
+        half_fov = math.radians(45)
+        bearing = (cx - self.frame_width / 2) / (self.frame_width / 2) * half_fov
+        distance_m = distance_cm / 100.0
+        bx = rx + distance_m * math.cos(ryaw + bearing)
+        by = ry + distance_m * math.sin(ryaw + bearing)
+        return bx, by
+
     def _sub_goto_basket(self, frame, pose):
+        """Hybrid navigation to basket: A* pathfinding + visual homing.
+
+        Phase A: Follow A* waypoints from current pose to basket world position.
+        Phase B: Switch to visual homing (BasketDetector) when within
+                 ``visual_homing_threshold`` of the basket.
+        Replans A* path if obstacle is encountered during Phase A.
+        """
+        basket_pos = self.world_map.get_basket_position()
+
+        # --- No basket position: fall back to purely visual homing ---
+        if basket_pos is None or pose is None:
+            return self._goto_basket_visual(frame, pose)
+
+        rx, ry, _ = pose
+        dist_to_basket = math.hypot(basket_pos[0] - rx, basket_pos[1] - ry)
+
+        # --- Phase B: Visual homing (close to basket) ---
+        if dist_to_basket < self.visual_homing_threshold:
+            result = self._goto_basket_visual(frame, pose)
+            if result == CS_DEPOSIT:
+                return result
+            # If visual fails, fall back to path following
+            if result == RECOVERY:
+                # Replan and try path following
+                self.state_data.pop('basket_path', None)
+            else:
+                return result
+
+        # --- Phase A: A* path following ---
+        # Compute path on first entry or after replan
+        if 'basket_path' not in self.state_data or not self.state_data['basket_path']:
+            path = self.pathfinder.find_path((rx, ry), basket_pos)
+            if path is None:
+                self._log('A* path to basket failed — trying visual homing')
+                return self._goto_basket_visual(frame, pose)
+            self.state_data['basket_path'] = list(path)
+            self.state_data['basket_path_idx'] = 0
+            self._log(f'A* path to basket: {len(path)} waypoints, '
+                      f'{self.pathfinder.get_path_length(path):.2f}m')
+
+        path = self.state_data['basket_path']
+        idx = self.state_data.get('basket_path_idx', 0)
+
+        if idx >= len(path):
+            # Path exhausted — should be at basket, switch to visual
+            self.state_data.pop('basket_path', None)
+            return self._goto_basket_visual(frame, pose)
+
+        # Navigate to current waypoint
+        target = path[idx]
+        reached = self._navigate_to_point(target)
+        if reached:
+            self.state_data['basket_path_idx'] = idx + 1
+            if idx + 1 >= len(path):
+                # Final waypoint reached — switch to visual
+                self.state_data.pop('basket_path', None)
+                return self._goto_basket_visual(frame, pose)
+            return CS_GOTO_BASKET
+
+        # Check timeout
+        if self._timeout():
+            self._log('GOTO_BASKET path following timeout')
+            return RECOVERY
+
+        return CS_GOTO_BASKET
+
+    def _goto_basket_visual(self, frame, pose):
+        """Visual homing using BasketDetector — final approach and alignment."""
         if frame is None:
             self.chassis.stop()
             return RECOVERY
@@ -635,7 +766,7 @@ class StateMachine:
         return BLIND_SPOT
 
     def _ball_to_dict_from_map(self, ball):
-        return {'color': None, 'cx': None, 'cy': None,
+        return {'color': ball.get('color'), 'cx': None, 'cy': None,
                 'distance': None, 'area': None, 'world_id': ball['id']}
 
     def _state_blind_spot(self, frame, pose):
@@ -778,6 +909,18 @@ class StateMachine:
         self.recovery_retry_count += 1
         if self.recovery_retry_count > self.max_retries:
             self._log('Recovery retries exhausted')
+            # If we're carrying a ball (GOTO_BASKET failed), keep it and
+            # replan the path rather than discarding it.
+            if (self.recovery_origin == COLLECT_BALL
+                    and self.collect_sub_state == CS_GOTO_BASKET
+                    and self.current_ball is not None):
+                self._log('Keeping ball — replanning path to basket')
+                self.state_data.pop('basket_path', None)
+                self.recovery_origin = None
+                self.recovery_retry_count = 0
+                self.recovery_reason = None
+                return CS_GOTO_BASKET
+            # Normal exhaustion: mark ball unreachable and move on
             if self.current_ball and self.current_ball.get('world_id'):
                 self.world_map.mark_unreachable(self.current_ball['world_id'])
             self.current_ball = None
