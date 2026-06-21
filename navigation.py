@@ -19,7 +19,7 @@ import time
 from urllib import request as _ul_req
 import numpy as np
 
-from jetbot import Camera, Robot
+from jetbot import Robot
 
 try:
     from SCSCtrl import TTLServo
@@ -27,6 +27,60 @@ try:
 except Exception:
     _servo_available = False
     print('TTLServo not available -- camera tilt skipped.')
+
+# -- Camera wrapper (bypasses JetBot Camera to avoid MockCamera fallback) ---
+class _Camera:
+    def __init__(self, width, height):
+        self.value = np.zeros((height, width, 3), dtype=np.uint8)
+        self._cap  = None
+        self._w    = width
+        self._h    = height
+        self._lock = threading.Lock()
+        self._open()
+
+    def _open(self):
+        pipelines = [
+            # GStreamer nvargus (requires daemon)
+            ("nvargus",
+             "nvarguscamerasrc ! "
+             "video/x-raw(memory:NVMM),width=%d,height=%d,format=NV12,framerate=30/1 ! "
+             "nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
+             "video/x-raw,format=BGR ! appsink drop=1" % (self._w, self._h),
+             cv2.CAP_GSTREAMER),
+            # GStreamer v4l2src (no daemon needed)
+            ("gst-v4l2",
+             "v4l2src device=/dev/video0 ! "
+             "video/x-raw,format=YUY2,width=%d,height=%d,framerate=30/1 ! "
+             "videoconvert ! video/x-raw,format=BGR ! appsink drop=1" % (self._w, self._h),
+             cv2.CAP_GSTREAMER),
+            # Raw V4L2 by device path
+            ("v4l2-path", "/dev/video0", cv2.CAP_ANY),
+            # Raw V4L2 by index
+            ("v4l2-idx",  0,             cv2.CAP_ANY),
+        ]
+        for name, src, backend in pipelines:
+            try:
+                cap = cv2.VideoCapture(src, backend)
+                if cap.isOpened():
+                    ok, frame = cap.read()
+                    if ok and frame is not None:
+                        self._cap = cap
+                        self.value = cv2.resize(frame, (self._w, self._h))
+                        print('Camera open via %s' % name)
+                        return
+                cap.release()
+            except Exception as e:
+                print('Camera [%s] failed: %s' % (name, e))
+        print('WARNING: no camera found -- frames will be black (detection disabled)')
+
+    def read(self):
+        if self._cap is None:
+            return self.value
+        ok, frame = self._cap.read()
+        if ok and frame is not None:
+            with self._lock:
+                self.value = cv2.resize(frame, (self._w, self._h))
+        return self.value
 
 # -- Configuration ---------------------------------------------------------
 CAMERA_WIDTH     = 300
@@ -63,7 +117,7 @@ if _servo_available:
     except Exception as e:
         print('Servo error:', e)
 
-camera = Camera.instance(width=CAMERA_WIDTH, height=CAMERA_HEIGHT)
+camera = _Camera(width=CAMERA_WIDTH, height=CAMERA_HEIGHT)
 robot  = Robot()
 robot.stop()
 print('Camera + Robot ready.')
@@ -350,6 +404,7 @@ def _inference_loop():
 
 def _nav_loop():
     while running:
+        camera.read()
         execute()
         time.sleep(1 / 30)
 
