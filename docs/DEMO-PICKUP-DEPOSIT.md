@@ -171,19 +171,23 @@ if abs(error) < 40 and distance < 150:
 
 ### Arm Sequences
 
-**Pickup**:
+**Pickup** (uses `move_to_pose_ramped()` with trapezoidal velocity profile):
 ```python
-1. Lower: [0, -45, -70, -30]  # Reach down
+1. Lower: [0, -45, -70, -30]  # Reach down (ramped, slow_speed)
 2. Close: [0, -45, -70, 0]    # Close gripper
-3. Lift:  [0, 20, 40, 90]     # Carry position
+3. Lift:  [0, 20, 40, 90]     # Carry position (ramped, default_speed)
 ```
 
-**Deposit**:
+**Deposit** (uses `move_to_pose_ramped()` with trapezoidal velocity profile):
 ```python
-1. Raise: [0, 50, 50, 45]     # Reach up
+1. Raise: [0, 50, 50, 45]     # Reach up (ramped, default_speed)
 2. Open:  [0, 50, 50, -30]    # Open gripper
-3. Home:  [0, 0, 0, 0]        # Return to neutral
+3. Home:  [0, 0, 0, 0]        # Return to neutral (ramped, default_speed)
 ```
+
+The trapezoidal profile accelerates servos during the first 30% of steps,
+cruises at peak speed for the middle 40%, and decelerates during the final 30%.
+This prevents jerky movements and reduces wear on servo motors.
 
 ---
 
@@ -309,7 +313,8 @@ while running:
 - [ ] Add obstacle avoidance during navigation
 - [ ] Implement multiple ball collection
 - [ ] Add error recovery and retry logic
-- [ ] Optimize approach speeds
+- [x] Distance-based speed ramping (fast when far, gradual deceleration near ball)
+- [x] Trapezoidal servo velocity profile for arm movements
 - [ ] Add path planning for efficiency
 - [ ] Implement actual gripper physics
 

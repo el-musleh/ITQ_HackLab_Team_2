@@ -173,6 +173,7 @@ class SimulationRunner:
 
                 # Step physics to let actions take effect
                 for _ in range(self.physics_steps_per_tick):
+                    self.chassis.step()
                     self.sim.step()
 
                 # Optional collision telemetry (robot vs arena)

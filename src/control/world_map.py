@@ -39,7 +39,9 @@ class WorldMap:
         self.balls = []
         self._ball_id_counter = 0
         self._visited = set()
+        self._visited_corners = set()
         self._generate_candidate_cells()
+        self._generate_corners()
 
     def set_basket_position(self, x, y):
         """Store estimated basket world coordinates."""
@@ -239,3 +241,44 @@ class WorldMap:
     def reset_visited(self):
         """Clear visited cells (e.g., for a new run)."""
         self._visited.clear()
+        self._visited_corners.clear()
+
+    # ------------------------------------------------------------------
+    # Corner-based exploration
+    # ------------------------------------------------------------------
+    def _generate_corners(self):
+        """Build list of arena corners inset by min_margin from the boundary."""
+        b = self.arena_bounds
+        m = max(self.min_margin, 0.2)
+        self._corners = [
+            (b['x_min'] + m, b['y_min'] + m),
+            (b['x_max'] - m, b['y_min'] + m),
+            (b['x_max'] - m, b['y_max'] - m),
+            (b['x_min'] + m, b['y_max'] - m),
+        ]
+
+    def get_arena_corners(self):
+        """Return list of (x, y) corner positions."""
+        return list(self._corners)
+
+    def mark_corner_visited(self, corner):
+        """Mark a corner as visited."""
+        self._visited_corners.add(corner)
+
+    def get_nearest_unvisited_corner(self, robot_pose):
+        """Return the nearest unvisited corner (x, y), or None."""
+        rx, ry, _ = robot_pose
+        best = None
+        best_dist = float('inf')
+        for corner in self._corners:
+            if corner in self._visited_corners:
+                continue
+            d = math.hypot(corner[0] - rx, corner[1] - ry)
+            if d < best_dist:
+                best_dist = d
+                best = corner
+        return best
+
+    def has_unvisited_corners(self):
+        """Return True if there are corners not yet visited."""
+        return any(c not in self._visited_corners for c in self._corners)

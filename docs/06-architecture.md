@@ -71,7 +71,7 @@ Camera Feed (CSI)
 | Approach control | PID controller | Smooth approach, less oscillation than bang-bang |
 | Collection | Arm servo choreography | Grab + lift + stow; exact angles tuned on-site |
 | Recovery | SafetyMonitor + reason-based | Stuck, dark-frame, arm-collision detectors with tailored recovery |
-| Speed strategy | Conservative | Collisions cost more than slow movement |
+| Speed strategy | Distance-based ramping | Fast when far, gradual deceleration near target; trapezoidal servo profile for arm |
 | Ball memory | WorldMap with color + confidence | Tracks ball positions, merges duplicates, marks collected/unreachable |
 | Blind-spot grid | Adaptive refinement (10 cm + half-res near obstacles) | Catches narrow gaps without excessive cell count |
 | Odometry drift | Landmark correction (weighted alpha blend) | Reduces dead-reckoning error using basket as known landmark |
@@ -97,6 +97,15 @@ state_machine:
   search_rotate_speed: 30
   approach_speed: 40
   recovery_timeout_sec: 5
+
+# Motor limits (distance-based speed ramping)
+motors:
+  max_speed: 0.25
+  approach_speed: 0.15
+  search_speed: 0.10
+  min_approach_speed: 0.05       # Crawl speed when very close to ball
+  far_distance_threshold: 50.0   # cm — full speed above this distance
+  close_distance_threshold: 15.0 # cm — min speed below this distance
 
 # Safety monitor (proactive collision / stuck / dark-frame detection)
 safety:

@@ -52,7 +52,11 @@ class MockArmController:
         """Move to pose."""
         self.current_pose = list(pose)
         return True
-        
+
+    def move_to_pose_ramped(self, pose, max_speed=None, num_steps=10):
+        """Move to pose with ramped velocity (mock — delegates to move_to_pose)."""
+        return self.move_to_pose(pose)
+
     def gripper_open(self):
         """Open gripper."""
         self.gripper_state = 'open'

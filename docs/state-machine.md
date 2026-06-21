@@ -60,10 +60,10 @@ stateDiagram-v2
 ### COLLECT_BALL
 Internal sub-states:
 
-1. `APPROACH` — track the ball with PID and drive forward until close enough.
-2. `PICKUP` — open claw, lower arm, close claw, lift to carry pose.
+1. `APPROACH` — track the ball with PID and drive forward until close enough. Speed is distance-ramped: full speed when far (>50cm), gradual deceleration as the ball gets closer, crawl speed (0.05) when very close (<15cm). See `_distance_to_speed()` in `state_machine.py`.
+2. `PICKUP` — open claw, lower arm (ramped trapezoidal velocity), close claw, lift to carry pose (ramped).
 3. `GOTO_BASKET` — rotate/search for the basket and approach it.
-4. `DEPOSIT` — open claw to drop the ball, then return arm to home.
+4. `DEPOSIT` — move arm to deposit position (ramped), open claw to drop the ball, then return arm to home (ramped).
 
 On failure, the state transitions to `RECOVERY`.
 
@@ -110,7 +110,17 @@ Default timeout values are in `src/control/state_machine.py`:
 | END | 30 s |
 | RECOVERY | 3 s |
 
-Motor speeds and PID gains come from `config.yaml`.
+Motor speeds and PID gains come from `config.yaml`:
+
+| Parameter | Default | Purpose |
+|---|---|---|
+| `motors.max_speed` | 0.25 | Full approach speed when far from ball |
+| `motors.approach_speed` | 0.15 | Base approach speed (used by Navigator) |
+| `motors.search_speed` | 0.10 | Rotation speed during search |
+| `motors.min_approach_speed` | 0.05 | Crawl speed when very close to ball |
+| `motors.far_distance_threshold` | 50.0 | cm — full speed above this distance |
+| `motors.close_distance_threshold` | 15.0 | cm — min speed below this distance |
+| `pid.kp` / `ki` / `kd` | 3.0 / 0.0 / 0.5 | PID gains for target tracking |
 
 ## Running the State Machine
 

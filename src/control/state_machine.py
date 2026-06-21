@@ -35,7 +35,7 @@ CS_DEPOSIT = 'DEPOSIT'
 
 DEFAULT_TIMEOUTS = {
     IDLE: 5.0,
-    WANDERING: 30.0,
+    WANDERING: 120.0,
     CHECK_FOR_BALL: 2.0,
     COLLECT_BALL: 60.0,
     BALLS_LEFT: 2.0,
@@ -86,6 +86,9 @@ class StateMachine:
         self.approach_speed = self.motor_config.get('approach_speed', 0.15)
         self.search_speed = self.motor_config.get('search_speed', 0.10)
         self.turn_speed = self.search_speed
+        self.min_approach_speed = self.motor_config.get('min_approach_speed', 0.05)
+        self.far_distance_threshold = self.motor_config.get('far_distance_threshold', 50.0)
+        self.close_distance_threshold = self.motor_config.get('close_distance_threshold', 15.0)
 
         self.pid = DualPIDController(
             kp=self.config.get('pid', {}).get('kp', 3.0),
@@ -166,12 +169,15 @@ class StateMachine:
         pose = self._get_pose()
 
         # Proactive safety monitor (stuck, dark frame, arm collision)
-        motor_values = self.chassis.get_motor_values() if hasattr(self.chassis, 'get_motor_values') else (0.0, 0.0)
-        self.arm_extended = self._is_arm_extended()
-        issue = self.safety_monitor.check(frame, pose, motor_values, self.arm_extended)
-        if issue is not None:
-            self._handle_safety_issue(issue)
-            return True
+        # Skip when already in RECOVERY — the handler manages its own motors
+        # and resets the monitor on entry.
+        if self.state != RECOVERY:
+            motor_values = self.chassis.get_motor_values() if hasattr(self.chassis, 'get_motor_values') else (0.0, 0.0)
+            self.arm_extended = self._is_arm_extended()
+            issue = self.safety_monitor.check(frame, pose, motor_values, self.arm_extended)
+            if issue is not None:
+                self._handle_safety_issue(issue)
+                return True
 
         if self._update_safety(frame):
             return True
@@ -222,15 +228,23 @@ class StateMachine:
             return
         if new_state == RECOVERY:
             self.recovery_origin = self.state
+            self._saved_state_data = self.state_data
         old_state = self.state
         self.state = new_state
         self.state_start_time = time.time()
-        self.state_data = {}
+        if new_state == RECOVERY:
+            self.state_data = {}
+        elif old_state == RECOVERY and hasattr(self, '_saved_state_data') and self._saved_state_data:
+            self.state_data = self._saved_state_data
+            self._saved_state_data = None
+        else:
+            self.state_data = {}
         self._log(f'State -> {new_state} (from {old_state})')
 
     def _handle_safety_issue(self, issue):
         """Handle a proactive safety issue from SafetyMonitor."""
         self._log(f'Safety issue: {issue.reason} — {issue.detail}')
+        self.safety_monitor.reset()
 
         if issue.reason == REASON_ARM_COLLISION:
             # Retract arm first, then go to recovery
@@ -397,6 +411,7 @@ class StateMachine:
             self.state_data['start_yaw'] = pose[2] if pose else 0.0
             self.state_data['sweep_phase'] = 0
             self.state_data['sweep_start'] = time.time()
+            self.state_data['corners_visited'] = []
             self.camera.set_pan(-90)
             self._log('WANDERING: starting pan sweep')
 
@@ -405,6 +420,7 @@ class StateMachine:
         sweep_duration = 4.0
         elapsed = time.time() - self.state_data['sweep_start']
 
+        # Phases 0-2: initial in-place pan sweep + rotate + sweep
         if sweep_phase == 0:
             pan = -90 + 180 * min(1.0, elapsed / sweep_duration)
             self.camera.set_pan(pan)
@@ -433,7 +449,82 @@ class StateMachine:
             self.camera.set_pan(pan)
             if elapsed >= sweep_duration:
                 self.camera.center()
+                # Mark current area visited and transition to corner navigation
+                if pose is not None:
+                    self.world_map.mark_visited(pose)
+                self.state_data['sweep_phase'] = 3
+                self._log('WANDERING: initial sweep done, navigating to corners')
+        elif sweep_phase == 3:
+            # Corner-to-corner navigation: go to each unvisited arena corner
+            # and do a pan sweep at each one
+            if pose is None:
                 return CHECK_FOR_BALL
+
+            # Check if we have a current corner target
+            corner_target = self.state_data.get('corner_target')
+
+            if corner_target is None:
+                # Find next unvisited corner
+                next_corner = self.world_map.get_nearest_unvisited_corner(pose)
+                if next_corner is None:
+                    # All corners visited — go check for balls / blind spots
+                    self._log('WANDERING: all corners visited')
+                    return CHECK_FOR_BALL
+                self.state_data['corner_target'] = next_corner
+                self.state_data['corner_sweep_done'] = False
+                self._log(f'WANDERING: navigating to corner {next_corner}')
+
+            corner_target = self.state_data['corner_target']
+
+            if not self.state_data.get('corner_sweep_done', False):
+                # Navigate to the corner
+                reached = self._navigate_to_point(corner_target)
+                if reached:
+                    self._set_motors(0, 0)
+                    self.world_map.mark_corner_visited(corner_target)
+                    self.world_map.mark_visited(pose)
+                    # Start a pan sweep at this corner
+                    self.state_data['corner_sweep_done'] = True
+                    self.state_data['corner_sweep_start'] = time.time()
+                    self.state_data['corner_sweep_phase'] = 0
+                    self.camera.set_pan(-90)
+                    self._log(f'WANDERING: reached corner {corner_target}, sweeping')
+            else:
+                # Do pan sweep at this corner
+                cs_elapsed = time.time() - self.state_data['corner_sweep_start']
+                cs_phase = self.state_data['corner_sweep_phase']
+
+                if cs_phase == 0:
+                    pan = -90 + 180 * min(1.0, cs_elapsed / sweep_duration)
+                    self.camera.set_pan(pan)
+                    if cs_elapsed >= sweep_duration:
+                        self.state_data['corner_sweep_phase'] = 1
+                        self.state_data['corner_rotate_target'] = self._normalize_angle(
+                            (pose[2] if pose else 0) + math.pi)
+                        self.state_data['corner_rotate_start'] = time.time()
+                elif cs_phase == 1:
+                    if pose is None:
+                        self.camera.center()
+                        # Move to next corner
+                        self.state_data['corner_target'] = None
+                        return WANDERING
+                    target_yaw = self.state_data['corner_rotate_target']
+                    yaw_error = self._normalize_angle(target_yaw - pose[2])
+                    if abs(yaw_error) > 0.2:
+                        self._set_motors(-self.turn_speed, self.turn_speed)
+                    else:
+                        self._set_motors(0, 0)
+                        self.state_data['corner_sweep_phase'] = 2
+                        self.state_data['corner_sweep_start'] = time.time()
+                        self.camera.set_pan(-90)
+                elif cs_phase == 2:
+                    pan = -90 + 180 * min(1.0, cs_elapsed / sweep_duration)
+                    self.camera.set_pan(pan)
+                    if cs_elapsed >= sweep_duration:
+                        self.camera.center()
+                        # Done with this corner — move to next
+                        self._log(f'WANDERING: corner {corner_target} swept')
+                        self.state_data['corner_target'] = None
 
         if self._timeout():
             self.camera.center()
@@ -566,10 +657,26 @@ class StateMachine:
         left, right = self.pid.update(cx, cy, self.frame_width, self.frame_height)
         left = max(-1.0, min(1.0, left))
         right = max(-1.0, min(1.0, right))
-        left *= self.approach_speed
-        right *= self.approach_speed
+        speed_scale = self._distance_to_speed(distance)
+        left *= speed_scale
+        right *= speed_scale
         self._set_motors(left, right)
         return CS_APPROACH
+
+    def _distance_to_speed(self, distance):
+        """Linearly ramp approach speed based on ball distance.
+
+        Far  (>= far_distance_threshold)  → approach_speed
+        Close (<= close_distance_threshold) → min_approach_speed
+        In between → linear interpolation.
+        """
+        if distance >= self.far_distance_threshold:
+            return self.approach_speed
+        if distance <= self.close_distance_threshold:
+            return self.min_approach_speed
+        ratio = (distance - self.close_distance_threshold) / (
+            self.far_distance_threshold - self.close_distance_threshold)
+        return self.min_approach_speed + ratio * (self.approach_speed - self.min_approach_speed)
 
     def _find_matching_ball(self, balls):
         if self.current_ball is None:
@@ -607,9 +714,9 @@ class StateMachine:
 
         steps = [
             (0.0, self.arm.gripper_open, 0.3),
-            (0.3, lambda: self.arm.move_to_pose(self.arm.pose_pickup), 1.5),
+            (0.3, lambda: self.arm.move_to_pose_ramped(self.arm.pose_pickup, max_speed=self.arm.slow_speed), 1.5),
             (1.8, self.arm.gripper_close, 0.5),
-            (2.3, lambda: self.arm.move_to_pose(self.arm.pose_carry), 1.5),
+            (2.3, lambda: self.arm.move_to_pose_ramped(self.arm.pose_carry, max_speed=self.arm.default_speed), 1.5),
         ]
         last_step = self.state_data.get('last_pickup_step', -1)
         for i, (start, action, duration) in enumerate(steps):
@@ -777,9 +884,9 @@ class StateMachine:
             return RECOVERY
 
         steps = [
-            (0.0, lambda: self.arm.move_to_pose(self.arm.pose_deposit), 1.5),
+            (0.0, lambda: self.arm.move_to_pose_ramped(self.arm.pose_deposit, max_speed=self.arm.default_speed), 1.5),
             (1.5, self.arm.gripper_open, 0.5),
-            (2.0, lambda: self.arm.move_to_pose(self.arm.pose_home), 2.0),
+            (2.0, lambda: self.arm.move_to_pose_ramped(self.arm.pose_home, max_speed=self.arm.default_speed), 2.0),
         ]
         last_step = self.state_data.get('last_deposit_step', -1)
         for i, (start, action, duration) in enumerate(steps):
@@ -827,19 +934,59 @@ class StateMachine:
             self._log(f'Blind spot target: {target}')
 
         target = self.state_data['target']
-        reached = self._navigate_to_point(target)
-        if reached:
-            self._set_motors(0, 0)
-            if frame is not None:
-                balls = self._validated_balls(frame)
-                pan = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
-                for ball in balls:
-                    self.world_map.register_ball_from_detection(ball, pose, camera_pan_deg=pan)
-            self.world_map.mark_visited(pose)
-            return CHECK_FOR_BALL
 
-        if self._timeout():
-            return RECOVERY
+        # Phase 1: navigate to target
+        if not self.state_data.get('reached', False):
+            reached = self._navigate_to_point(target)
+            if not reached:
+                if self._timeout():
+                    return RECOVERY
+                return BLIND_SPOT
+            # Reached target — start pan sweep
+            self._set_motors(0, 0)
+            self.world_map.mark_visited(pose)
+            self.state_data['reached'] = True
+            self.state_data['sweep_phase'] = 0
+            self.state_data['sweep_start'] = time.time()
+            self.camera.set_pan(-90)
+            self._log(f'BLIND_SPOT: reached {target}, starting pan sweep')
+
+        # Phase 2: pan sweep at the target location
+        sweep_duration = 4.0
+        sweep_phase = self.state_data['sweep_phase']
+        elapsed = time.time() - self.state_data['sweep_start']
+
+        if sweep_phase == 0:
+            pan = -90 + 180 * min(1.0, elapsed / sweep_duration)
+            self.camera.set_pan(pan)
+            if elapsed >= sweep_duration:
+                self.state_data['sweep_phase'] = 1
+                self.state_data['rotate_target'] = self._normalize_angle(pose[2] + math.pi)
+                self.camera.center()
+        elif sweep_phase == 1:
+            target_yaw = self.state_data['rotate_target']
+            yaw_error = self._normalize_angle(target_yaw - pose[2])
+            if abs(yaw_error) > 0.2:
+                self._set_motors(-self.turn_speed, self.turn_speed)
+            else:
+                self._set_motors(0, 0)
+                self.state_data['sweep_phase'] = 2
+                self.state_data['sweep_start'] = time.time()
+                self.camera.set_pan(-90)
+        elif sweep_phase == 2:
+            pan = -90 + 180 * min(1.0, elapsed / sweep_duration)
+            self.camera.set_pan(pan)
+            if elapsed >= sweep_duration:
+                self.camera.center()
+                # Register any balls found during the sweep
+                if frame is not None:
+                    balls = self._validated_balls(frame)
+                    pan_val = self.camera.get_pan() if hasattr(self.camera, 'get_pan') else 0
+                    for ball in balls:
+                        self.world_map.register_ball_from_detection(ball, pose, camera_pan_deg=pan_val)
+                self._log(f'BLIND_SPOT: sweep done at {target}')
+                return CHECK_FOR_BALL
+
         return BLIND_SPOT
 
     def _navigate_to_point(self, target):

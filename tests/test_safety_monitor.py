@@ -30,7 +30,7 @@ class TestStuckDetector:
         for i in range(10):
             t = base_time + i * 0.1
             # Manually append to control timestamps
-            det._poses.append((t, (1.0, 2.0)))
+            det._poses.append((t, (1.0, 2.0, 0.0)))
             det._motors.append((t, (0.15, 0.15)))
         issue = det.check()
         assert issue is not None
@@ -43,8 +43,20 @@ class TestStuckDetector:
         base_time = time.time()
         for i in range(10):
             t = base_time + i * 0.1
-            det._poses.append((t, (1.0 + i * 0.02, 2.0)))
+            det._poses.append((t, (1.0 + i * 0.02, 2.0, 0.0)))
             det._motors.append((t, (0.15, 0.15)))
+        issue = det.check()
+        assert issue is None
+
+    def test_not_stuck_when_turning_in_place(self):
+        """Motors running with opposite signs (turning) → does not trigger."""
+        det = StuckDetector(window_s=1.0, min_displacement=0.05,
+                            motor_threshold=0.05)
+        base_time = time.time()
+        for i in range(10):
+            t = base_time + i * 0.1
+            det._poses.append((t, (1.0, 2.0, i * 0.1)))
+            det._motors.append((t, (-0.15, 0.15)))
         issue = det.check()
         assert issue is None
 
@@ -55,14 +67,14 @@ class TestStuckDetector:
         base_time = time.time()
         for i in range(10):
             t = base_time + i * 0.1
-            det._poses.append((t, (1.0, 2.0)))
+            det._poses.append((t, (1.0, 2.0, 0.0)))
             det._motors.append((t, (0.0, 0.0)))
         issue = det.check()
         assert issue is None
 
     def test_reset_clears_state(self):
         det = StuckDetector(window_s=1.0, min_displacement=0.05)
-        det._poses.append((time.time(), (0, 0)))
+        det._poses.append((time.time(), (0, 0, 0.0)))
         det._motors.append((time.time(), (0.1, 0.1)))
         det.reset()
         assert len(det._poses) == 0
@@ -183,7 +195,7 @@ class TestSafetyMonitor:
         base_time = time.time()
         for i in range(10):
             t = base_time + i * 0.1
-            monitor.stuck._poses.append((t, (0, 0)))
+            monitor.stuck._poses.append((t, (0, 0, 0.0)))
             monitor.stuck._motors.append((t, (0.15, 0.15)))
         # Arm collision should take priority
         issue = monitor.check(
@@ -200,7 +212,7 @@ class TestSafetyMonitor:
         base_time = time.time()
         for i in range(10):
             t = base_time + i * 0.1
-            monitor.stuck._poses.append((t, (0, 0)))
+            monitor.stuck._poses.append((t, (0, 0, 0.0)))
             monitor.stuck._motors.append((t, (0.15, 0.15)))
         dark = np.zeros((240, 320, 3), dtype=np.uint8)
         for _ in range(3):
@@ -240,7 +252,7 @@ class TestSafetyMonitor:
     def test_reset_clears_all(self):
         monitor = SafetyMonitor(config={'safety': {}})
         monitor.dark._dark_streak = 5
-        monitor.stuck._poses.append((time.time(), (0, 0)))
+        monitor.stuck._poses.append((time.time(), (0, 0, 0.0)))
         monitor.reset()
         assert monitor.dark._dark_streak == 0
         assert len(monitor.stuck._poses) == 0

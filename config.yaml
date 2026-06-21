@@ -83,6 +83,9 @@ motors:
   max_speed: 0.25
   approach_speed: 0.15
   search_speed: 0.10
+  min_approach_speed: 0.05       # Crawl speed when very close to ball
+  far_distance_threshold: 50.0   # cm — full speed above this distance
+  close_distance_threshold: 15.0 # cm — min speed below this distance
 
 # Arm poses (angles in degrees)
 arm_poses:

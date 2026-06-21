@@ -45,14 +45,15 @@ class StuckDetector:
         self.window_s = window_s
         self.min_displacement = min_displacement
         self.motor_threshold = motor_threshold
-        self._poses = collections.deque()  # (timestamp, (x, y))
+        self._poses = collections.deque()  # (timestamp, (x, y, yaw))
         self._motors = collections.deque()  # (timestamp, (left, right))
 
     def update(self, pose, motor_values):
         """Feed latest pose and motor values into the rolling window."""
         now = time.time()
         if pose is not None:
-            self._poses.append((now, (pose[0], pose[1])))
+            yaw = pose[2] if len(pose) > 2 else 0.0
+            self._poses.append((now, (pose[0], pose[1], yaw)))
         self._motors.append((now, motor_values))
         self._prune(now)
 
@@ -74,6 +75,12 @@ class StuckDetector:
         # Are motors being driven?
         max_motor = max(abs(m[1][0]) + abs(m[1][1]) for m in self._motors)
         if max_motor < self.motor_threshold:
+            return None
+
+        # If motors have opposite signs, robot is turning — not stuck
+        avg_left = sum(m[1][0] for m in self._motors) / len(self._motors)
+        avg_right = sum(m[1][1] for m in self._motors) / len(self._motors)
+        if avg_left * avg_right < 0:
             return None
 
         # Has the robot moved enough?

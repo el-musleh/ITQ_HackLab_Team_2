@@ -193,7 +193,7 @@ ITQ_HackLab_Team_2/
 - **Recovery:** Timeout-based stuck detection
 
 ### Hardware
-- **Motors:** Max speed 0.25, approach 0.15
+- **Motors:** Max speed 0.25, approach 0.15, min crawl 0.05 (distance-ramped)
 - **Servos:** 6 servos (pan, tilt, 4-DOF arm)
 - **Camera:** 320×240 @ 30fps
 - **Arm:** 4 predefined poses
@@ -205,12 +205,13 @@ ITQ_HackLab_Team_2/
 1. **Multi-Color Detection** — Handles blue, red, and silver balls
 2. **Robust Validation** — Multi-frame consensus reduces false positives
 3. **Priority Avoidance** — Boundary > obstacle > normal operation
-4. **Smooth Tracking** — PID controller for precise approach
+4. **Smooth Tracking** — PID controller for precise approach with distance-based speed ramping (fast when far, gradual deceleration near ball)
 5. **Autonomous Calibration** — Basket learning at startup
 6. **Modular Design** — Each component independently testable
 7. **Safety Limits** — Speed clamping, servo angle limits
 8. **Recovery System** — Automatic stuck detection and escape
-9. **SafetyMonitor** — Proactive detection of stuck (motor vs displacement), dark frames (vision blackout), and arm collisions (visual pre-check + physics + timeout)
+9. **Trapezoidal Arm Motion** — Servo movements use accel/cruise/decel velocity profile for smooth operation
+10. **SafetyMonitor** — Proactive detection of stuck (motor vs displacement), dark frames (vision blackout), and arm collisions (visual pre-check + physics + timeout)
 
 ---
 
@@ -328,6 +329,20 @@ YOLOv8n with TensorRT is feasible on Jetson Nano (10-15 FPS) and would improve d
 
 **Status:** Documented only — not implemented. HSV detection with robustness improvements is sufficient for competition.
 
+### Distance-Based Speed Ramping ✓
+
+**Problem:** Robot approached balls at a fixed speed (0.15) regardless of distance — too slow when far, too fast when close, risking overshoot or collision. Arm servos also moved at constant speed with no acceleration/deceleration profile.
+
+**Solution:** Two improvements:
+
+1. **Chassis distance ramping** — `_distance_to_speed(distance)` in `state_machine.py` linearly interpolates approach speed between `min_approach_speed` (0.05) and `max_speed` (0.25) based on ball distance. Far balls (>50cm) get full speed; close balls (<15cm) get crawl speed; in between gets linear ramp. Replaces the fixed `approach_speed` multiplier in `_sub_approach()`.
+
+2. **Arm trapezoidal velocity profile** — `move_to_pose_ramped()` in `arm.py` breaks servo movements into N interpolation steps with a trapezoidal speed profile: accelerate (0-30%), cruise (30-70%), decelerate (70-100%). `pickup_sequence()` and `deposit_sequence()` now use the ramped version for all pose transitions.
+
+**Config additions:** `motors.min_approach_speed`, `motors.far_distance_threshold`, `motors.close_distance_threshold`
+
+**Files modified:** `src/control/state_machine.py`, `src/hardware/arm.py`, `config.yaml`, `tests/test_speed_ramp.py`
+
 ---
 
 ## 📝 Configuration Tuning Guide
@@ -342,12 +357,15 @@ balls.colors.[color].hsv_upper: [H+10, S+30, V+30]
 ```yaml
 motors.approach_speed: 0.20  # Increase
 motors.search_speed: 0.15    # Increase
+motors.far_distance_threshold: 40.0  # Reach full speed sooner
 ```
 
 ### If robot too fast (unsafe):
 ```yaml
 motors.max_speed: 0.20       # Decrease
 motors.approach_speed: 0.12  # Decrease
+motors.min_approach_speed: 0.03  # Slower crawl near ball
+motors.close_distance_threshold: 20.0  # Start slowing earlier
 ```
 
 ### If arm doesn't reach ball:

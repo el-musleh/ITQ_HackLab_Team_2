@@ -67,6 +67,7 @@ camera = CameraController(config)
 |--------|----------|------------|--------|
 | `__init__(config)` | ✅ | ✅ | Matched |
 | `move_to_pose(pose, speed)` | ✅ | ✅ | Matched |
+| `move_to_pose_ramped(pose, max_speed, num_steps)` | ✅ | ✅ | Matched |
 | `home()` | ✅ | ✅ | Matched |
 | `gripper_open()` | ✅ | ✅ | Matched |
 | `gripper_close()` | ✅ | ✅ | Matched |
@@ -146,13 +147,13 @@ chassis.stop()
 arm.gripper_open()
 time.sleep(0.5)
 
-arm.move_to_pose([0, -35, -55, -25], speed=150)  # Pickup position
-time.sleep(1.0)
+arm.move_to_pose_ramped([0, -35, -55, -25], max_speed=80)  # Pickup (ramped)
+time.sleep(0.5)
 
 arm.gripper_close()
 time.sleep(0.5)
 
-arm.move_to_pose([0, 15, 25, 50], speed=150)  # Carry position
+arm.move_to_pose_ramped([0, 15, 25, 50], max_speed=150)  # Carry (ramped)
 ```
 
 ### Example 3: Camera
@@ -179,17 +180,17 @@ def pickup_ball(arm, chassis):
     arm.gripper_open()
     time.sleep(0.3)
     
-    # Lower to pickup
-    arm.move_to_pose(arm.pose_pickup, speed=arm.slow_speed)
-    time.sleep(1.0)
+    # Lower to pickup (ramped)
+    arm.move_to_pose_ramped(arm.pose_pickup, max_speed=arm.slow_speed)
+    time.sleep(0.5)
     
     # Close gripper
     arm.gripper_close()
     time.sleep(0.5)
     
-    # Lift to carry
-    arm.move_to_pose(arm.pose_carry, speed=arm.default_speed)
-    time.sleep(1.0)
+    # Lift to carry (ramped)
+    arm.move_to_pose_ramped(arm.pose_carry, max_speed=arm.default_speed)
+    time.sleep(0.5)
     
     return True
 ```
@@ -226,6 +227,11 @@ camera:
 # Motor settings
 motors:
   max_speed: 0.25
+  approach_speed: 0.15
+  search_speed: 0.10
+  min_approach_speed: 0.05       # Crawl speed when very close to ball
+  far_distance_threshold: 50.0   # cm — full speed above this distance
+  close_distance_threshold: 15.0 # cm — min speed below this distance
 ```
 
 ---

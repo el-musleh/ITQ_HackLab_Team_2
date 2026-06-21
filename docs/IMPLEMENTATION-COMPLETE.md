@@ -210,6 +210,7 @@ arm = ArmController(robot_id, config)
 # Poses
 arm.home()  # Returns True/False
 arm.move_to_pose([0, -35, -55, -25], speed=150)  # Returns True/False
+arm.move_to_pose_ramped([0, -35, -55, -25], max_speed=150, num_steps=10)  # Trapezoidal velocity profile
 
 # Gripper
 arm.gripper_open()  # Returns True/False

@@ -200,6 +200,20 @@ class ChassisController:
         """Stop all motors."""
         self.set_motors(0, 0)
 
+    def step(self):
+        """Re-apply current motor velocities. Call before each physics step.
+
+        In velocity mode, ``resetBaseVelocity`` only sets the velocity for the
+        next physics step; friction decays it quickly.  Re-applying every
+        step sustains movement across the multi-step window.
+        """
+        if self.left_speed == 0.0 and self.right_speed == 0.0:
+            return
+        if self.locomotion_mode == 'wheels' and (self._wheel_left or self._wheel_right):
+            self._apply_wheel_velocities()
+        else:
+            self._apply_base_velocity()
+
     def get_motor_values(self):
         """Get current motor values."""
         return (self.left_value, self.right_value)
@@ -360,6 +374,40 @@ class ArmController:
             return True
         except Exception as e:
             logger.error("Arm movement failed: %s", e)
+            return False
+
+    def move_to_pose_ramped(self, pose, max_speed=None, num_steps=10):
+        """Move arm to a pose with trapezoidal velocity profile (hardware-compatible).
+
+        Interpolates between current and target pose over num_steps, stepping
+        physics between each to produce smooth visible motion.
+
+        Args:
+            pose: List of 4 angles [base, shoulder, elbow, gripper] or pose name.
+            max_speed: Peak servo speed (ignored in sim, kept for API compat).
+            num_steps: Number of interpolation steps (more = smoother).
+
+        Returns:
+            True if successful.
+        """
+        try:
+            target = self._resolve_pose(pose)
+            start = list(self.current_pose)
+            for i in range(1, num_steps + 1):
+                progress = i / num_steps
+                interp = [
+                    s + progress * (t - s)
+                    for s, t in zip(start, target)
+                ]
+                self.set_joint_angles(interp)
+                self.current_pose = list(interp)
+                if self.sim is not None:
+                    for _ in range(max(1, self._settle_steps // num_steps)):
+                        self.sim.step()
+            self.current_pose = list(target)
+            return True
+        except Exception as e:
+            logger.error("Ramped arm movement failed: %s", e)
             return False
 
     def home(self):
