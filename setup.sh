@@ -97,6 +97,20 @@ echo -e "${GREEN}Python packages installed.${NC}"
 echo ""
 
 # ========================================
+# Step 3b: Optional Simulation Dependencies
+# ========================================
+echo -e "${YELLOW}[3b/6] Installing optional simulation packages...${NC}"
+
+echo -e "${YELLOW}Installing PyBullet (physics simulation)...${NC}"
+pip install "pybullet>=3.2.7" || echo -e "${RED}PyBullet install failed — simulation unavailable${NC}"
+
+echo -e "${YELLOW}Installing MuJoCo (physics simulation)...${NC}"
+pip install "mujoco>=3.0.0" || echo -e "${RED}MuJoCo install failed — MuJoCo simulation unavailable${NC}"
+
+echo -e "${GREEN}Simulation packages installed (optional).${NC}"
+echo ""
+
+# ========================================
 # Step 4: Install SCSCtrl (JETANK Servo Library)
 # ========================================
 echo -e "${YELLOW}[4/6] Installing SCSCtrl servo library...${NC}"
@@ -162,6 +176,8 @@ python3 -c "import numpy; print(f'  NumPy: {numpy.__version__}')" || echo -e "  
 python3 -c "import serial; print(f'  PySerial: OK')" || echo -e "  ${RED}PySerial: MISSING${NC}"
 python3 -c "import SCSCtrl; print(f'  SCSCtrl: OK')" || echo -e "  ${RED}SCSCtrl: MISSING — run again or install manually${NC}"
 python3 -c "import ultralytics; print(f'  Ultralytics: OK')" || echo -e "  ${YELLOW}Ultralytics: not installed (optional)${NC}"
+python3 -c "import pybullet; print(f'  PyBullet: OK')" || echo -e "  ${YELLOW}PyBullet: not installed (optional — simulation)${NC}"
+python3 -c "import mujoco; print(f'  MuJoCo: OK')" || echo -e "  ${YELLOW}MuJoCo: not installed (optional — simulation)${NC}"
 
 echo ""
 echo "Directory structure:"

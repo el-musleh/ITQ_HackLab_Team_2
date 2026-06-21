@@ -158,6 +158,8 @@ Or manually: copy the working cell into the `.py` file in the right package fold
 .
 ├── README.md                    # This file
 ├── setup.sh                     # One-command setup for all team members
+├── run_tests.sh                 # Run pytest test suite (activates venv)
+├── run_mujoco_sim.sh            # Launch MuJoCo simulation viewer (activates venv)
 ├── setup.cfg                    # Setuptools config (egg-info location)
 ├── requirements.txt             # Python runtime dependencies
 ├── requirements-dev.txt         # Dev/test dependencies (pytest, etc.)
@@ -326,6 +328,103 @@ pip install ultralytics
 
 ---
 
+## ▶️ How to Run or Test
+
+### Option 1: Run the Test Suite
+
+The project includes a pytest suite covering the state machine, safety monitor, odometry, world map, simulation hardware, and more.
+
+```bash
+# Quick way (activates venv + runs tests)
+./run_tests.sh
+
+# Or manually:
+source venv/bin/activate
+python3 -m pytest tests/ -v
+```
+
+Run only simulation tests (headless, no GUI required):
+```bash
+python3 -m pytest tests/ -m simulation -v
+```
+
+### Option 2: Run the PyBullet Simulation
+
+A full physics simulation with the robot, arena, balls, and obstacles. Requires a display for GUI mode.
+
+```bash
+source venv/bin/activate
+
+# Full autonomous run with GUI visualization
+python src/simulation/run_simulation.py
+
+# Basic motion test (GUI)
+python src/simulation/test_basic_motion.py
+
+# Perception pipeline test (GUI)
+python src/simulation/test_perception.py
+
+# Headless simulation tests (no display needed — safe for CI)
+python -m pytest tests/ -m simulation -v
+```
+
+> See [`src/simulation/README.md`](src/simulation/README.md) for full simulation docs.
+
+### Option 3: Run the MuJoCo Simulation
+
+A MuJoCo-based digital twin of the arena with interactive viewer controls.
+
+```bash
+# Quick way (activates venv + checks deps + launches viewer)
+./run_mujoco_sim.sh
+
+# Or manually:
+source venv/bin/activate
+cd src/simulation_mujoco/bottle-cap-sim
+pip install -r requirements.txt   # first time only
+python -m src.main
+```
+
+| Key / Mouse | Action |
+|---|---|
+| Left drag | Rotate camera |
+| Right drag | Pan |
+| Scroll | Zoom |
+| `Space` | Pause / resume |
+| `Esc` | Exit |
+
+> Requires Python ≥ 3.9, MuJoCo ≥ 3.0, and a display (OpenGL). See [`src/simulation_mujoco/bottle-cap-sim/README.md`](src/simulation_mujoco/bottle-cap-sim/README.md) for details.
+
+### Option 4: Run on the Robot (Jetson Nano + JETANK)
+
+The CLI entry point runs the full autonomous state machine on real hardware:
+
+```bash
+source venv/bin/activate
+python -m src.main
+```
+
+This requires:
+- NVIDIA Jetson Nano with JetPack 4.x+
+- JETANK chassis with servos and CSI camera connected
+- `jetbot` Python package installed
+- Serial port permissions (`/dev/ttyTHS1`)
+
+Press `Ctrl+C` to stop. The robot will safely shut down chassis, arm, and camera on exit.
+
+### Option 5: Run via Jupyter Notebooks
+
+For interactive development and calibration on the Jetson, see the [Quick Start](#-quick-start) section above. Key notebooks:
+
+| Notebook | Purpose |
+|----------|---------|
+| `00_calibrate_basket.ipynb` | Camera color/light calibration |
+| `02_test_camera.ipynb` | Verify CSI camera capture |
+| `05_detection_demo.ipynb` | Live cap detection overlay |
+| `06_full_run.ipynb` | End-to-end autonomous run |
+
+---
+
 ## 👥 Team & Responsibilities
 
 | Name | Role | Module | Status |
@@ -423,4 +522,4 @@ git push origin feature/perception-detector
 ---
 
 *Event:* AI & Robotics Hackathon Berlin — Team 2 — ITQ Track  
-*Last updated:* June 20, 2026 (Hackathon Day — Active Development)
+*Last updated:* June 21, 2026 (Hackathon Day — Active Development)

@@ -12,14 +12,7 @@ if [ ! -d "$PROJECT_ROOT/venv" ]; then
 fi
 source "$PROJECT_ROOT/venv/bin/activate"
 
-# Verify MuJoCo is installed
-if ! python -c "import mujoco" 2>/dev/null; then
-    echo "Error: MuJoCo package not found."
-    echo "Install it with:  pip install mujoco>=3.0.0"
-    exit 1
-fi
-
-# Run MuJoCo bottle-cap simulation
-echo "Starting MuJoCo bottle-cap simulation..."
-cd "$PROJECT_ROOT/src/simulation_mujoco/bottle-cap-sim"
-python -m src.main
+# Run the test suite
+echo "Running test suite..."
+cd "$PROJECT_ROOT"
+python3 -m pytest tests/ -v
